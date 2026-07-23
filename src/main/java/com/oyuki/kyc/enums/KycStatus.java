@@ -1,0 +1,1 @@
+package com.oyuki.kyc.enums; public enum KycStatus { NOT_SUBMITTED, PENDING, APPROVED, REJECTED }

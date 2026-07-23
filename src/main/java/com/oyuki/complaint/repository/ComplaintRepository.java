@@ -1,0 +1,1 @@
+package com.oyuki.complaint.repository; import com.oyuki.complaint.entity.Complaint; import org.springframework.data.jpa.repository.JpaRepository; import java.util.List; public interface ComplaintRepository extends JpaRepository<Complaint,Long>{ List<Complaint> findAllByCustomer_IdOrderByCreatedAtDesc(Long id); List<Complaint> findAllByOrderByCreatedAtDesc(); }

@@ -1,0 +1,1 @@
+package com.oyuki.kyc.repository; import com.oyuki.kyc.entity.KycSubmission; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*; public interface KycSubmissionRepository extends JpaRepository<KycSubmission,Long>{Optional<KycSubmission> findByUser_Id(Long id);List<KycSubmission> findAllByOrderBySubmittedAtDesc();}

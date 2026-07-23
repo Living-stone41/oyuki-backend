@@ -1,0 +1,1 @@
+package com.oyuki.wallet.enums; public enum WithdrawalStatus { PENDING, APPROVED, PAID, REJECTED }

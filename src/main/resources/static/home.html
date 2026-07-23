@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Oyuki — Fresh Produce, Ready Meals & Home Kitchens in Nigeria</title>
+<meta name="description" content="Oyuki connects Nigerian customers with farm-fresh produce, ready meals, and trusted home kitchens. Order groceries or have your ingredients cooked for you.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head><body>
+  
+<div id="oy-navbar"></div>
+
+<section class="hero">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <span class="eyebrow">Farm to Table • Nigeria</span>
+        <h1 class="mt-2">Fresh produce, ready meals, and home kitchens — all in one place.</h1>
+        <p class="lead mt-3">Order directly from farmers, browse ready-to-eat meals, or send your ingredients to a trusted kitchen to cook for you.</p>
+        <form class="hero-search mt-4" onsubmit="event.preventDefault();location.href='shop.html?q='+encodeURIComponent(this.q.value)">
+          <input name="q" placeholder="Search for rice, tomatoes, jollof…">
+          <select name="cat"><option>All</option><option>Produce</option><option>Meals</option><option>Kitchens</option></select>
+          <button class="btn btn-brand"><i class="bi bi-search"></i></button>
+        </form>
+        <div class="d-flex flex-wrap gap-2 mt-3">
+          <a class="cat-pill" href="shop.html">🌾 Farm produce</a>
+          <a class="cat-pill" href="meals.html">🍲 Ready meals</a>
+          <a class="cat-pill" href="kitchens.html">👨‍🍳 Cook my ingredients</a>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="hero-img"><img src="assets/images/hero.jpg" alt="Fresh farm produce"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-sm" id="live-stats">
+  <div class="container">
+    <div class="row g-3">
+      <div class="col-6 col-md-3"><div class="stat"><div class="k">Farmers</div><div class="v" data-stat="farmers">0</div><div class="d">registered sellers</div></div></div>
+      <div class="col-6 col-md-3"><div class="stat"><div class="k">Kitchens</div><div class="v" data-stat="kitchens">0</div><div class="d">trusted kitchens</div></div></div>
+      <div class="col-6 col-md-3"><div class="stat"><div class="k">Orders</div><div class="v" data-stat="orders">0</div><div class="d">delivered</div></div></div>
+      <div class="col-6 col-md-3"><div class="stat"><div class="k">Rating</div><div class="v" data-stat="rating">0.0★</div><div class="d"><span data-stat="ratings">0</span> approved reviews</div></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+      <div><span class="eyebrow">Featured</span><h2>Fresh from the farm</h2></div>
+      <a href="shop.html" class="btn btn-outline-brand">See all →</a>
+    </div>
+    <div class="row" id="feat-products"></div>
+  </div>
+</section>
+
+<section class="section" style="background:#fff;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+      <div><span class="eyebrow">Hot & ready</span><h2>Popular ready meals</h2></div>
+      <a href="meals.html" class="btn btn-outline-brand">See all →</a>
+    </div>
+    <div class="row" id="feat-meals"></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+      <div><span class="eyebrow">Trusted kitchens</span><h2>Cook my ingredients</h2></div>
+      <a href="kitchens.html" class="btn btn-outline-brand">See all →</a>
+    </div>
+    <p class="text-muted mb-4" style="max-width:680px">Buy ingredients from farmers and choose a kitchen to prepare them for you — freshly made and delivered to your door.</p>
+    <div class="row" id="feat-kitchens"></div>
+  </div>
+</section>
+
+<section class="section" style="background:var(--brand-soft)">
+  <div class="container">
+    <div class="text-center mb-4"><span class="eyebrow">How it works</span><h2>From farm to your table</h2></div>
+    <div class="row">
+      <div class="col-md-3 step"><div class="n">1</div><h6>Browse</h6><p class="text-muted small">Pick fresh produce, ready meals, or a kitchen.</p></div>
+      <div class="col-md-3 step"><div class="n">2</div><h6>Order</h6><p class="text-muted small">Add to cart and check out securely.</p></div>
+      <div class="col-md-3 step"><div class="n">3</div><h6>Prepare</h6><p class="text-muted small">Farmers pack. Kitchens cook. We coordinate.</p></div>
+      <div class="col-md-3 step"><div class="n">4</div><h6>Delivered</h6><p class="text-muted small">Track your order until it arrives.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="row g-4 align-items-center">
+      <div class="col-md-6">
+        <span class="eyebrow">Why Oyuki</span>
+        <h2 class="mt-2">A complete farm-to-table ecosystem</h2>
+        <ul class="list-unstyled mt-3">
+          <li class="mb-2"><i class="bi bi-check2-circle text-success"></i> Verified farmers and kitchens</li>
+          <li class="mb-2"><i class="bi bi-check2-circle text-success"></i> Fresh, sorted, market-priced produce</li>
+          <li class="mb-2"><i class="bi bi-check2-circle text-success"></i> "Cook my ingredients" — unique service</li>
+          <li class="mb-2"><i class="bi bi-check2-circle text-success"></i> Live order tracking, from farm to door</li>
+          <li class="mb-2"><i class="bi bi-check2-circle text-success"></i> Secure bank transfer with admin confirmation</li>
+        </ul>
+      </div>
+      <div class="col-md-6">
+        <div class="panel">
+          <h5>Are you a farmer or home cook?</h5>
+          <p class="text-muted">Join Oyuki and reach thousands of customers.</p>
+          <div class="d-flex gap-2 flex-wrap">
+            <a href="register.html?role=seller" class="btn btn-brand">Become a seller</a>
+            <a href="register.html?role=kitchen" class="btn btn-outline-brand">Open a kitchen</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="background:#0f2417;color:#e5f0e8">
+  <div class="container text-center">
+    <span class="eyebrow" style="color:#f59e0b">Stay in the loop</span>
+    <h2 style="color:#fff" class="mt-2">Get weekly deals & new kitchens</h2>
+    <form class="d-flex justify-content-center gap-2 mt-3 flex-wrap" onsubmit="event.preventDefault();Oyuki.Toast.show('Subscribed!','success');this.reset()">
+      <input class="form-control" style="max-width:340px" type="email" placeholder="you@email.com" required>
+      <button class="btn btn-brand">Subscribe</button>
+    </form>
+  </div>
+</section>
+
+<div id="oy-footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const productsBox=document.getElementById('feat-products'), mealsBox=document.getElementById('feat-meals'), kitchensBox=document.getElementById('feat-kitchens');
+  productsBox.innerHTML=mealsBox.innerHTML=kitchensBox.innerHTML='<div class="col-12 text-muted">Loading from Oyuki backend…</div>';
+  try {
+    const [farm, meals] = await Promise.all([Oyuki.Products.list({productType:'FARM_PRODUCT'}), Oyuki.Products.list({productType:'READY_MEAL'})]);
+    productsBox.innerHTML=farm.slice(0,4).map(Oyuki.productCard).join('') || '<div class="col-12 text-muted">No active farm products yet.</div>';
+    mealsBox.innerHTML=meals.slice(0,4).map(Oyuki.productCard).join('') || '<div class="col-12 text-muted">No active ready meals yet.</div>';
+    kitchensBox.innerHTML=Oyuki.kitchensFromProducts(meals).slice(0,3).map(Oyuki.kitchenCard).join('') || '<div class="col-12 text-muted">Kitchen profiles will appear when kitchens publish meals.</div>';
+  } catch(error) {
+    productsBox.innerHTML=`<div class="col-12 alert alert-danger">${Oyuki.escapeHtml(error.message)}</div>`; mealsBox.innerHTML=''; kitchensBox.innerHTML='';
+  }
+});
+</script>
+
+<script>
+  async function loadLiveStats() {
+    try {
+      const response = await fetch('/api/public/stats');
+      if (!response.ok) return;
+      const stats = await response.json();
+      const animate = (element, target, suffix = '') => {
+        const end = Number(target) || 0;
+        const start = performance.now();
+        const duration = 900;
+        const tick = now => {
+          const progress = Math.min((now - start) / duration, 1);
+          const value = Math.floor(end * (1 - Math.pow(1 - progress, 3)));
+          element.textContent = value.toLocaleString() + suffix;
+          if (progress < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      };
+      animate(document.querySelector('[data-stat="farmers"]'), stats.farmers);
+      animate(document.querySelector('[data-stat="kitchens"]'), stats.kitchens);
+      animate(document.querySelector('[data-stat="orders"]'), stats.orders);
+      animate(document.querySelector('[data-stat="ratings"]'), stats.ratings);
+      document.querySelector('[data-stat="rating"]').textContent = `${Number(stats.rating || 0).toFixed(1)}★`;
+    } catch (_) {}
+  }
+  document.addEventListener('DOMContentLoaded', () => { loadLiveStats(); setInterval(loadLiveStats, 60000); });
+</script>
+</body></html>

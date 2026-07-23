@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create account | Oyuki</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .otp-choice{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0 18px}
+    .otp-choice label{display:flex;align-items:center;gap:9px;border:1px solid #dfe8e2;border-radius:12px;padding:12px;cursor:pointer;background:#fff;font-size:.88rem;font-weight:650}
+    .otp-choice label:has(input:checked){border-color:var(--oy-green,#168a4a);background:#edf9f2;color:var(--oy-green,#168a4a);box-shadow:0 0 0 3px rgba(22,138,74,.08)}
+    .otp-choice input{accent-color:var(--oy-green,#168a4a)}
+    .contact-note{font-size:.78rem;color:#75827a;margin-top:-9px;margin-bottom:12px}
+    @media(max-width:420px){.otp-choice{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class="oy-auth-page">
+  <section class="oy-auth-visual">
+    <a class="oy-auth-brand" href="home.html">Oyuki</a>
+    <div class="oy-auth-copy">
+      <h2>Join the Oyuki marketplace.</h2>
+      <p>Create a customer, seller or kitchen account. Providers complete verification before products become public.</p>
+    </div>
+    <div class="oy-auth-points"><span>Customer</span><span>Seller</span><span>Kitchen</span></div>
+  </section>
+
+  <main class="oy-auth-main">
+    <div class="oy-auth-box">
+      <div class="oy-wordmark">Oyuki</div>
+      <h1>Create account</h1>
+      <p class="oy-auth-sub">Enter an email address, a phone number, or both.</p>
+      <div id="registerError" class="oy-inline-error"></div>
+
+      <div class="oy-role-grid">
+        <button class="oy-role active" type="button" data-role="CUSTOMER"><i class="bi bi-person"></i>Customer</button>
+        <button class="oy-role" type="button" data-role="SELLER"><i class="bi bi-shop"></i>Seller</button>
+        <button class="oy-role" type="button" data-role="KITCHEN"><i class="bi bi-egg-fried"></i>Kitchen</button>
+      </div>
+
+      <form id="registerForm" novalidate>
+        <input type="hidden" name="role" value="CUSTOMER">
+
+        <div class="oy-field">
+          <label>Full name</label>
+          <div class="oy-input-wrap"><i class="bi bi-person"></i><input class="oy-input" name="fullName" required minlength="2" maxlength="150" data-letters-only placeholder="Full name"></div>
+        </div>
+
+        <div class="oy-field">
+          <label>Email address <span class="text-muted">(optional)</span></label>
+          <div class="oy-input-wrap"><i class="bi bi-envelope"></i><input id="registerEmail" class="oy-input" type="email" name="email" placeholder="Email address" autocomplete="email"></div>
+        </div>
+
+        <div class="oy-field">
+          <label>Phone number <span class="text-muted">(optional)</span></label>
+          <div class="oy-input-wrap"><i class="bi bi-telephone"></i><input id="registerPhone" class="oy-input" name="phoneNumber" inputmode="tel" minlength="10" maxlength="16" placeholder="08012345678" autocomplete="tel"></div>
+        </div>
+        <p class="contact-note">At least one contact is required. Nigerian phone numbers are converted to +234 for SMS delivery.</p>
+
+        <div id="otpChoiceBlock" style="display:none">
+          <label class="fw-semibold small">Where should we send your OTP?</label>
+          <div class="otp-choice">
+            <label><input type="radio" name="otpChannel" value="EMAIL" checked><i class="bi bi-envelope"></i>Email</label>
+            <label><input type="radio" name="otpChannel" value="PHONE"><i class="bi bi-chat-dots"></i>SMS</label>
+          </div>
+        </div>
+
+        <div class="oy-field">
+          <label>Password</label>
+          <div class="oy-input-wrap"><i class="bi bi-lock"></i><input id="regPassword" class="oy-input" type="password" name="password" minlength="8" required placeholder="Password" autocomplete="new-password"><button class="oy-password-toggle" type="button" onclick="togglePass('regPassword',this)"><i class="bi bi-eye"></i></button></div>
+        </div>
+
+        <div class="oy-field">
+          <label>Confirm password</label>
+          <div class="oy-input-wrap"><i class="bi bi-lock"></i><input id="confirmPassword" class="oy-input" type="password" name="confirmPassword" minlength="8" required placeholder="Confirm password" autocomplete="new-password"><button class="oy-password-toggle" type="button" onclick="togglePass('confirmPassword',this)"><i class="bi bi-eye"></i></button></div>
+        </div>
+
+        <div id="providerNote" class="alert alert-light border d-none small">After OTP verification, upload your picture and ID document, complete your pickup address, and wait for admin approval.</div>
+        <button id="registerBtn" class="oy-submit">Create account</button>
+      </form>
+      <p class="oy-auth-bottom">Already have an account? <a href="login.html">Sign in</a></p>
+    </div>
+  </main>
+</div>
+<script src="assets/js/app.js"></script>
+<script>
+function togglePass(id,b){const i=document.getElementById(id),x=b.querySelector('i');i.type=i.type==='password'?'text':'password';x.className=i.type==='password'?'bi bi-eye':'bi bi-eye-slash'}
+const setRole=r=>{document.querySelectorAll('.oy-role').forEach(b=>b.classList.toggle('active',b.dataset.role===r));document.querySelector('[name=role]').value=r;document.getElementById('providerNote').classList.toggle('d-none',r==='CUSTOMER')};
+document.querySelectorAll('.oy-role').forEach(b=>b.onclick=()=>setRole(b.dataset.role));
+const qr=(new URLSearchParams(location.search).get('role')||'').toUpperCase();if(['CUSTOMER','SELLER','KITCHEN'].includes(qr))setRole(qr);
+
+const emailInput=document.getElementById('registerEmail');
+const phoneInput=document.getElementById('registerPhone');
+const choiceBlock=document.getElementById('otpChoiceBlock');
+function updateOtpChoice(){
+  const hasEmail=!!emailInput.value.trim(),hasPhone=!!phoneInput.value.trim();
+  choiceBlock.style.display=hasEmail&&hasPhone?'block':'none';
+  if(hasEmail&&!hasPhone)document.querySelector('[name=otpChannel][value=EMAIL]').checked=true;
+  if(hasPhone&&!hasEmail)document.querySelector('[name=otpChannel][value=PHONE]').checked=true;
+}
+emailInput.addEventListener('input',updateOtpChoice);phoneInput.addEventListener('input',updateOtpChoice);
+
+document.getElementById('registerForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const f=e.currentTarget,box=document.getElementById('registerError'),b=document.getElementById('registerBtn');
+  box.classList.remove('show');
+  if(!f.reportValidity())return;
+  const email=emailInput.value.trim(),phone=phoneInput.value.trim();
+  if(!email&&!phone){box.textContent='Enter an email address or phone number.';box.classList.add('show');return}
+  if(phone&&!/^\+?[0-9]{10,15}$/.test(phone.replace(/[\s-]/g,''))){box.textContent='Enter a valid phone number using 10 to 15 digits.';box.classList.add('show');return}
+  if(f.password.value!==f.confirmPassword.value){box.textContent='Passwords do not match.';box.classList.add('show');return}
+  b.disabled=true;b.textContent='Creating account…';
+  try{
+    const d=Object.fromEntries(new FormData(f).entries());
+    d.email=email||null;d.phoneNumber=phone.replace(/[\s-]/g,'')||null;
+    if(!d.otpChannel)d.otpChannel=email?'EMAIL':'PHONE';
+    const destination=d.otpChannel==='PHONE'?d.phoneNumber:d.email;
+    await Oyuki.Auth.register(d);
+    localStorage.setItem('oyuki_pending_contact',destination);
+    location.href='verify-otp.html?contact='+encodeURIComponent(destination);
+  }catch(err){box.textContent=err.message;box.classList.add('show')}
+  finally{b.disabled=false;b.textContent='Create account'}
+});
+</script>
+</body>
+</html>

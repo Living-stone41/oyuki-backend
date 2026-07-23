@@ -1,0 +1,1 @@
+package com.oyuki.exportrequest.enums; public enum ExportRequestStatus { SUBMITTED, REVIEWING, QUOTED, APPROVED, REJECTED, COMPLETED }
