@@ -2,6 +2,8 @@ package com.oyuki.auth.service;
 
 import com.oyuki.auth.enums.OtpChannel;
 import com.oyuki.user.entity.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
@@ -10,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class OtpDeliveryService {
+
+    private static final Logger log = LoggerFactory.getLogger(OtpDeliveryService.class);
 
     private final JavaMailSender mailSender;
     private final TwilioVerifyService twilioVerifyService;
@@ -311,13 +315,47 @@ public class OtpDeliveryService {
 
         try {
             mailSender.send(message);
+            log.info("OTP email sent successfully to {}", maskEmail(recipient));
 
         } catch (Exception exception) {
+            log.error(
+                    "OTP email delivery failed for {}. Sender configured: {}",
+                    maskEmail(recipient),
+                    !senderEmail.isBlank(),
+                    exception
+            );
+
+            Throwable root = rootCause(exception);
             throw new IllegalStateException(
-                    "The OTP email could not be sent. Check the Gmail App Password and try again.",
+                    "The OTP email could not be sent: "
+                            + root.getClass().getSimpleName()
+                            + " - "
+                            + String.valueOf(root.getMessage()),
                     exception
             );
         }
+    }
+
+    private String maskEmail(String email) {
+        if (email == null || !email.contains("@")) {
+            return "unknown";
+        }
+
+        String[] parts = email.split("@", 2);
+        String local = parts[0];
+        String masked = local.length() <= 2
+                ? "**"
+                : local.substring(0, 2) + "***";
+
+        return masked + "@" + parts[1];
+    }
+
+    private Throwable rootCause(Throwable exception) {
+        Throwable current = exception;
+        while (current.getCause() != null && current.getCause() != current) {
+            current = current.getCause();
+        }
+        return current;
     }
 
     private String registrationEmail(

@@ -1,6 +1,6 @@
 package com.oyuki.security;
 
-
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -15,6 +15,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -22,11 +23,27 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final List<String> allowedOriginPatterns;
 
     public SecurityConfig(
-            JwtAuthenticationFilter jwtAuthenticationFilter
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            @Value(
+                    "${app.cors.allowed-origins:"
+                            + "http://localhost:8080,"
+                            + "http://localhost:5500,"
+                            + "http://127.0.0.1:5500,"
+                            + "https://*.up.railway.app}"
+            )
+            String allowedOrigins
     ) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+
+        this.allowedOriginPatterns = Arrays.stream(
+                        allowedOrigins.split(",")
+                )
+                .map(String::trim)
+                .filter(origin -> !origin.isBlank())
+                .toList();
     }
 
     @Bean
@@ -51,8 +68,7 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-
-                        // Public HTML frontend and static assets
+                        // Public HTML pages and static files
                         .requestMatchers(
                                 "/",
                                 "/index.html",
@@ -63,7 +79,7 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
-                        // Browser preflight requests
+                        // Browser CORS preflight requests
                         .requestMatchers(
                                 HttpMethod.OPTIONS,
                                 "/**"
@@ -81,12 +97,25 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
-                        // Public newsletter subscription and live marketplace statistics
-                        .requestMatchers(HttpMethod.POST, "/api/newsletter/subscribe", "/api/newsletter/unsubscribe")
+                        // Public newsletter endpoints
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/newsletter/subscribe",
+                                "/api/newsletter/unsubscribe"
+                        )
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/public/stats")
+
+                        // Public marketplace statistics
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/public/stats"
+                        )
                         .permitAll()
-                        .requestMatchers("/api/newsletter/admin/**")
+
+                        // Newsletter administration
+                        .requestMatchers(
+                                "/api/newsletter/admin/**"
+                        )
                         .hasRole("ADMIN")
 
                         // Public Farmers' Day endpoints
@@ -96,20 +125,13 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
-                        // Public marketplace products and uploaded images
+                        // Public marketplace products and uploaded files
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/marketplace/products/**",
                                 "/uploads/**"
                         )
                         .permitAll()
-
-                        // Logged-in providers manage their own products here.
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/products/**"
-                        )
-                        .hasAnyRole("SELLER", "KITCHEN", "ADMIN")
 
                         // Public seller and kitchen profiles
                         .requestMatchers(
@@ -119,12 +141,16 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
-                        /*
-                         * ADMIN PAYMENT ROUTES
-                         *
-                         * Admin can configure the platform bank
-                         * account and review payment receipts.
-                         */
+                        // Public reviews
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/reviews/products/**",
+                                "/api/reviews/providers/**",
+                                "/api/reviews/riders/**"
+                        )
+                        .permitAll()
+
+                        // Admin payment routes
                         .requestMatchers(
                                 "/api/admin/payments/**"
                         )
@@ -136,64 +162,82 @@ public class SecurityConfig {
                         )
                         .hasRole("ADMIN")
 
-                        // New marketplace management modules
-                        .requestMatchers("/api/complaints/admin/**", "/api/export-requests/admin/**", "/api/kyc/admin/**", "/api/wallet/admin/**")
+                        // Admin management modules
+                        .requestMatchers(
+                                "/api/complaints/admin/**",
+                                "/api/export-requests/admin/**",
+                                "/api/kyc/admin/**",
+                                "/api/wallet/admin/**"
+                        )
                         .hasRole("ADMIN")
 
-                        .requestMatchers("/api/complaints/**", "/api/export-requests/**")
+                        // Customer complaints and export requests
+                        .requestMatchers(
+                                "/api/complaints/**",
+                                "/api/export-requests/**"
+                        )
                         .hasRole("CUSTOMER")
 
-                        .requestMatchers("/api/kyc/**", "/api/wallet/**")
+                        // Provider KYC and wallet routes
+                        .requestMatchers(
+                                "/api/kyc/**",
+                                "/api/wallet/**"
+                        )
                         .hasAnyRole("SELLER", "KITCHEN")
 
+                        // Chat requires login
                         .requestMatchers("/api/chat/**")
                         .authenticated()
 
-                        // Every other admin endpoint
+                        // Admin delivery management
                         .requestMatchers(
-                                "/api/admin/**"
+                                "/api/admin/order-deliveries/**"
                         )
                         .hasRole("ADMIN")
 
-                        // Logistics administration
+                        // Admin review management
                         .requestMatchers(
-                                "/api/logistics/**"
+                                "/api/admin/reviews/**"
                         )
+                        .hasRole("ADMIN")
+
+                        // Every other admin endpoint
+                        .requestMatchers("/api/admin/**")
+                        .hasRole("ADMIN")
+
+                        // Logistics administration
+                        .requestMatchers("/api/logistics/**")
                         .hasAnyRole(
                                 "LOGISTICS_ADMIN",
                                 "ADMIN"
                         )
 
                         // Rider endpoints
+                        .requestMatchers("/api/rider/**")
+                        .hasRole("RIDER")
+
+                        // Rider delivery endpoints
                         .requestMatchers(
-                                "/api/rider/**"
+                                "/api/rider/order-deliveries/**"
                         )
                         .hasRole("RIDER")
 
-                        // Notifications for every logged-in user
-                        .requestMatchers(
-                                "/api/notifications/**"
-                        )
+                        // Notifications
+                        .requestMatchers("/api/notifications/**")
                         .authenticated()
 
-                        /*
-                         * CUSTOMER PAYMENT ROUTES
-                         *
-                         * Customer can view the platform account,
-                         * upload receipts and view payment history.
-                         */
-                        .requestMatchers(
-                                "/api/payments/**"
-                        )
+                        // Customer payments
+                        .requestMatchers("/api/payments/**")
                         .hasRole("CUSTOMER")
 
                         // Customer cart
-                        .requestMatchers(
-                                "/api/cart/**"
-                        )
+                        .requestMatchers("/api/cart/**")
                         .hasRole("CUSTOMER")
+
+                        // Customer wishlist
                         .requestMatchers("/api/wishlist/**")
-.hasRole("CUSTOMER")
+                        .hasRole("CUSTOMER")
+
                         // Customer checkout
                         .requestMatchers(
                                 HttpMethod.POST,
@@ -201,7 +245,7 @@ public class SecurityConfig {
                         )
                         .hasRole("CUSTOMER")
 
-                        // Customer order history and details
+                        // Customer order history
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/orders/my",
@@ -216,6 +260,17 @@ public class SecurityConfig {
                         .hasAnyRole(
                                 "SELLER",
                                 "KITCHEN"
+                        )
+
+                        // Product viewing for providers and admin
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/products/**"
+                        )
+                        .hasAnyRole(
+                                "SELLER",
+                                "KITCHEN",
+                                "ADMIN"
                         )
 
                         // Product creation
@@ -261,43 +316,39 @@ public class SecurityConfig {
                                 "ADMIN"
                         )
 
-                        // Every remaining endpoint needs a valid JWT
+                        // Customer tracking
                         .requestMatchers(
-        "/api/admin/order-deliveries/**"
-)
-.hasRole("ADMIN")
+                                HttpMethod.GET,
+                                "/api/tracking/**"
+                        )
+                        .hasRole("CUSTOMER")
 
-.requestMatchers(
-        "/api/rider/order-deliveries/**"
-)
-.hasRole("RIDER")
+                        // Customer reviews
+                        .requestMatchers("/api/reviews/**")
+                        .hasRole("CUSTOMER")
 
-.requestMatchers(
-        HttpMethod.GET,
-        "/api/tracking/**"
-)
-.hasRole("CUSTOMER")
-.requestMatchers(
-        HttpMethod.GET,
-        "/api/reviews/products/**",
-        "/api/reviews/providers/**",
-        "/api/reviews/riders/**"
-)
-.permitAll()
+                        // Customer addresses
+                        .requestMatchers("/api/addresses/**")
+                        .hasRole("CUSTOMER")
 
-.requestMatchers("/api/reviews/**")
-.hasRole("CUSTOMER")
+                        // Provider pickup address
+                        .requestMatchers(
+                                "/api/provider/pickup-address/**"
+                        )
+                        .hasAnyRole(
+                                "SELLER",
+                                "KITCHEN"
+                        )
 
-.requestMatchers("/api/admin/reviews/**")
-.hasRole("ADMIN")
-.requestMatchers("/api/addresses/**")
-.hasRole("CUSTOMER")
-.requestMatchers("/api/provider/pickup-address/**")
-.hasAnyRole("SELLER", "KITCHEN")
-.requestMatchers("/api/delivery-fees/**")
-.hasRole("CUSTOMER")
-.requestMatchers("/api/coupons/**")
-.hasRole("CUSTOMER")
+                        // Delivery fees
+                        .requestMatchers("/api/delivery-fees/**")
+                        .hasRole("CUSTOMER")
+
+                        // Coupons
+                        .requestMatchers("/api/coupons/**")
+                        .hasRole("CUSTOMER")
+
+                        // Everything else requires authentication
                         .anyRequest()
                         .authenticated()
                 )
@@ -314,6 +365,7 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration configuration
     ) throws Exception {
+
         return configuration.getAuthenticationManager();
     }
 
@@ -323,11 +375,13 @@ public class SecurityConfig {
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
-        // Accept the deployed Railway domain, custom domains and local development.
-        // Using origin patterns allows credentials while avoiding the
-        // "Invalid CORS request" response caused by a hard-coded localhost-only list.
+        /*
+         * Allows exact domains and patterns such as:
+         * https://example.up.railway.app
+         * https://*.up.railway.app
+         */
         configuration.setAllowedOriginPatterns(
-                List.of("*")
+                allowedOriginPatterns
         );
 
         configuration.setAllowedMethods(
@@ -342,23 +396,19 @@ public class SecurityConfig {
         );
 
         configuration.setAllowedHeaders(
-                List.of(
-                        "Authorization",
-                        "Content-Type",
-                        "Accept",
-                        "Origin",
-                        "X-Requested-With"
-                )
+                List.of("*")
         );
 
         configuration.setExposedHeaders(
                 List.of(
+                        "Authorization",
                         "Content-Disposition",
                         "Content-Type"
                 )
         );
 
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
