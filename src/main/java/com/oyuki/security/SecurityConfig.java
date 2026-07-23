@@ -323,11 +323,11 @@ public class SecurityConfig {
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
+        // Accept the deployed Railway domain, custom domains and local development.
+        // Using origin patterns allows credentials while avoiding the
+        // "Invalid CORS request" response caused by a hard-coded localhost-only list.
         configuration.setAllowedOriginPatterns(
-                List.of(
-                        "http://localhost:*",
-                        "http://127.0.0.1:*"
-                )
+                List.of("*")
         );
 
         configuration.setAllowedMethods(
