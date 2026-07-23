@@ -625,35 +625,259 @@
     });
   }
 
-  function renderFooter() {
-    const holder = document.getElementById('oy-footer');
-    if (!holder) return;
-    holder.innerHTML = `<footer class="oy-footer"><div class="container"><div class="row g-4"><div class="col-lg-4 col-md-6"><a href="home.html" class="brand"><span class="dot"></span> Oyuki</a><p class="small mt-2">Fresh produce, ready meals and trusted kitchens across Nigeria.</p><div class="social-links mt-3"><a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a><a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a><a href="https://wa.me/2347013403517" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a></div></div><div class="col-6 col-md-3 col-lg-2"><h6>Explore</h6><a href="shop.html">Marketplace</a><a href="meals.html">Meals</a><a href="kitchens.html">Kitchens</a><a href="contact.html#complaint">Complaints</a></div><div class="col-6 col-md-3 col-lg-2"><h6>Company</h6><a href="about.html">About</a><a href="contact.html">Contact</a><a href="feature-center.html">Export requests</a></div><div class="col-lg-4 col-md-6"><h6>Newsletter</h6><p class="small">Get product updates, offers and Farmers' Day announcements.</p><form id="newsletterForm" class="footer-newsletter mt-3"><input id="newsletterEmail" type="email" class="form-control" placeholder="Your email address" required><button class="btn btn-brand" type="submit">Subscribe</button></form><div id="newsletterMessage" class="small mt-2" aria-live="polite"></div></div></div><hr><div class="d-flex flex-column flex-md-row justify-content-between gap-2 small"><span>© ${new Date().getFullYear()} Oyuki Marketplace</span><span>Farm to table, across Nigeria.</span></div></div></footer>`;
+function renderFooter() {
+  const holder = document.getElementById('oy-footer');
+  if (!holder) return;
 
-    const form = document.getElementById('newsletterForm');
-    if (form) form.addEventListener('submit', async event => {
+  holder.innerHTML = `
+    <footer class="oy-footer">
+      <div class="footer-shape footer-shape-one"></div>
+      <div class="footer-shape footer-shape-two"></div>
+
+      <div class="container position-relative">
+        <div class="footer-cta">
+          <div>
+            <span class="footer-eyebrow">Oyuki Marketplace</span>
+            <h2>Fresh produce and trusted meals, all in one place.</h2>
+            <p>
+              Discover farmers, food sellers and kitchens serving customers
+              across Nigeria.
+            </p>
+          </div>
+
+          <a href="shop.html" class="btn footer-cta-btn">
+            Shop now
+            <i class="bi bi-arrow-right"></i>
+          </a>
+        </div>
+
+        <div class="row g-5 footer-main">
+          <div class="col-lg-4 col-md-6">
+            <a href="home.html" class="footer-brand">
+              <span class="footer-brand-icon">O</span>
+              <span>Oyuki</span>
+            </a>
+
+            <p class="footer-description">
+              Fresh farm produce, ready meals and trusted kitchens delivered
+              conveniently across Nigeria.
+            </p>
+
+            <div class="footer-socials">
+              <a
+                href="https://www.instagram.com/YOUR_INSTAGRAM_USERNAME"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+              >
+                <i class="bi bi-instagram"></i>
+              </a>
+
+              <a
+                href="https://www.facebook.com/YOUR_FACEBOOK_USERNAME"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+              >
+                <i class="bi bi-facebook"></i>
+              </a>
+
+              <a
+                href="https://www.tiktok.com/@YOUR_TIKTOK_USERNAME"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="TikTok"
+              >
+                <i class="bi bi-tiktok"></i>
+              </a>
+
+              <a
+                href="https://www.youtube.com/@YOUR_YOUTUBE_USERNAME"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="YouTube"
+              >
+                <i class="bi bi-youtube"></i>
+              </a>
+
+              <a
+                href="https://wa.me/2347013403517?text=Hello%20Oyuki%2C%20I%20would%20like%20to%20make%20an%20enquiry."
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="WhatsApp"
+              >
+                <i class="bi bi-whatsapp"></i>
+              </a>
+            </div>
+          </div>
+
+          <div class="col-6 col-md-3 col-lg-2">
+            <h6 class="footer-title">Explore</h6>
+
+            <div class="footer-links">
+              <a href="shop.html">Marketplace</a>
+              <a href="meals.html">Ready Meals</a>
+              <a href="kitchens.html">Kitchens</a>
+              <a href="home.html#freshFromFarm">Farm Produce</a>
+              <a href="contact.html#complaint">Complaints</a>
+            </div>
+          </div>
+
+          <div class="col-6 col-md-3 col-lg-2">
+            <h6 class="footer-title">Company</h6>
+
+            <div class="footer-links">
+              <a href="about.html">About Oyuki</a>
+              <a href="contact.html">Contact</a>
+              <a href="feature-center.html">Export Requests</a>
+              <a href="login.html">Login</a>
+              <a href="register.html">Create Account</a>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6">
+            <div class="footer-newsletter-card">
+              <div class="footer-newsletter-icon">
+                <i class="bi bi-envelope-paper-heart"></i>
+              </div>
+
+              <h6>Join our newsletter</h6>
+
+              <p>
+                Get product updates, special offers and Farmers' Day
+                announcements.
+              </p>
+
+              <form id="newsletterForm" class="footer-newsletter-form">
+                <div class="footer-input-group">
+                  <i class="bi bi-envelope"></i>
+
+                  <input
+                    id="newsletterEmail"
+                    type="email"
+                    class="form-control"
+                    placeholder="Your email address"
+                    autocomplete="email"
+                    required
+                  >
+                </div>
+
+                <button
+                  class="btn footer-subscribe-btn"
+                  type="submit"
+                >
+                  <span>Subscribe</span>
+                  <i class="bi bi-send"></i>
+                </button>
+              </form>
+
+              <div
+                id="newsletterMessage"
+                class="footer-newsletter-message"
+                aria-live="polite"
+              ></div>
+
+              <small class="footer-privacy">
+                <i class="bi bi-shield-check"></i>
+                No spam. Unsubscribe anytime.
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-divider"></div>
+
+        <div class="footer-bottom">
+          <span>
+            © ${new Date().getFullYear()} Oyuki Marketplace.
+            All rights reserved.
+          </span>
+
+          <div class="footer-bottom-links">
+            <a href="privacy.html">Privacy</a>
+            <a href="terms.html">Terms</a>
+
+            <span>
+              Made with
+              <i class="bi bi-heart-fill"></i>
+              in Nigeria
+            </span>
+          </div>
+        </div>
+      </div>
+    </footer>
+  `;
+
+  const form = document.getElementById('newsletterForm');
+
+  if (form) {
+    form.addEventListener('submit', async event => {
       event.preventDefault();
-      const email = document.getElementById('newsletterEmail').value.trim();
-      const message = document.getElementById('newsletterMessage');
-      const button = form.querySelector('button');
+
+      const emailInput =
+        document.getElementById('newsletterEmail');
+
+      const message =
+        document.getElementById('newsletterMessage');
+
+      const button =
+        form.querySelector('button[type="submit"]');
+
+      if (!emailInput || !message || !button) return;
+
+      const email = emailInput.value.trim();
+      const originalButton = button.innerHTML;
+
       button.disabled = true;
-      button.textContent = 'Subscribing…';
+
+      button.innerHTML = `
+        <span
+          class="spinner-border spinner-border-sm"
+          aria-hidden="true"
+        ></span>
+        Subscribing...
+      `;
+
       message.textContent = '';
+      message.className = 'footer-newsletter-message';
+
       try {
-        const result = await Api.post('/newsletter/subscribe', { email }, false);
-        message.textContent = result.message || 'Subscribed successfully. Check your inbox.';
+        const result = await Api.post(
+          '/newsletter/subscribe',
+          { email },
+          false
+        );
+
+        message.textContent =
+          result?.message ||
+          'Subscribed successfully. Welcome to Oyuki!';
+
+        message.classList.add('success');
+
         form.reset();
-        Toast.show(message.textContent, 'success');
+
+        Toast.show(
+          message.textContent,
+          'success'
+        );
       } catch (error) {
-        message.textContent = error.message;
-        Toast.show(error.message, 'error');
+        message.textContent =
+          error?.message ||
+          'Unable to subscribe. Please try again.';
+
+        message.classList.add('error');
+
+        Toast.show(
+          message.textContent,
+          'error'
+        );
       } finally {
         button.disabled = false;
-        button.textContent = 'Subscribe';
+        button.innerHTML = originalButton;
       }
     });
   }
-
+}
   window.Oyuki = {
     API_ORIGIN, API_BASE, Api, Auth, Products, Cart, Wishlist, Addresses,
     Delivery, Coupons, Orders, CustomerPayments, Recommendations,
