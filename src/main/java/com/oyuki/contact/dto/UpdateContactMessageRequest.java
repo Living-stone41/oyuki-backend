@@ -1,12 +1,23 @@
 package com.oyuki.contact.dto;
 
 import com.oyuki.contact.enums.ContactMessageStatus;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
 
-public record UpdateContactMessageRequest(
-        ContactMessageStatus status,
+public class UpdateContactMessageRequest {
 
-        @Size(max = 4000, message = "Reply must not exceed 4000 characters")
-        String reply
-) {
+    @NotNull(message = "Contact-message status is required")
+    private ContactMessageStatus status;
+
+    public UpdateContactMessageRequest() {
+    }
+
+    public ContactMessageStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(
+            ContactMessageStatus status
+    ) {
+        this.status = status;
+    }
 }

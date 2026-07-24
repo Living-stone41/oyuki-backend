@@ -156,6 +156,14 @@ public class SecurityConfig {
                         )
                         .hasRole("ADMIN")
 
+                        // Paystack server-to-server webhook.
+                        // The endpoint validates x-paystack-signature.
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/payments/paystack/webhook"
+                        )
+                        .permitAll()
+
                         // Farmers' Day administration
                         .requestMatchers(
                                 "/api/farmers-day/admin/**"
@@ -347,7 +355,17 @@ public class SecurityConfig {
                         // Coupons
                         .requestMatchers("/api/coupons/**")
                         .hasRole("CUSTOMER")
-
+                        .requestMatchers(
+        HttpMethod.POST,
+        "/api/contact"
+)
+.permitAll()
+.requestMatchers(
+        "/api/admin/contact-messages/**"
+)
+.hasRole("ADMIN")
+.requestMatchers("/ws/**")
+.permitAll()
                         // Everything else requires authentication
                         .anyRequest()
                         .authenticated()

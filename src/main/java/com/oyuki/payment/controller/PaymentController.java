@@ -1,8 +1,15 @@
 package com.oyuki.payment.controller;
 
+import com.oyuki.payment.dto.InitializePaystackPaymentRequest;
+import com.oyuki.payment.dto.PaystackConfigResponse;
+import com.oyuki.payment.dto.PaystackInitializeResponse;
+import com.oyuki.payment.dto.PaystackVerificationResponse;
 import com.oyuki.payment.dto.PaymentProofResponse;
 import com.oyuki.payment.dto.PlatformBankAccountResponse;
+import com.oyuki.payment.dto.VerifyPaystackPaymentRequest;
+import com.oyuki.payment.service.PaystackPaymentService;
 import com.oyuki.payment.service.PaymentService;
+import jakarta.validation.Valid;
 import org.springframework.core.io.Resource;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
@@ -21,12 +28,17 @@ import java.util.List;
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final PaystackPaymentService paystackPaymentService;
 
     public PaymentController(
-            PaymentService paymentService
+            PaymentService paymentService,
+            PaystackPaymentService paystackPaymentService
     ) {
         this.paymentService =
                 paymentService;
+
+        this.paystackPaymentService =
+                paystackPaymentService;
     }
 
     /*
@@ -39,6 +51,78 @@ public class PaymentController {
                 paymentService
                         .getActiveBankAccount()
         );
+    }
+
+    @GetMapping("/paystack/config")
+    public ResponseEntity<PaystackConfigResponse>
+    getPaystackConfig() {
+        return ResponseEntity.ok(
+                paystackPaymentService.getConfig()
+        );
+    }
+
+    @PostMapping("/orders/{orderId}/paystack/initialize")
+    public ResponseEntity<PaystackInitializeResponse>
+    initializePaystackPayment(
+            Authentication authentication,
+            @PathVariable Long orderId,
+
+            @RequestBody(required = false)
+            InitializePaystackPaymentRequest request
+    ) {
+        Long customerId =
+                getUserId(authentication);
+
+        return ResponseEntity.ok(
+                paystackPaymentService.initializePayment(
+                        customerId,
+                        orderId,
+                        request
+                )
+        );
+    }
+
+    @PostMapping("/orders/{orderId}/paystack/verify")
+    public ResponseEntity<PaystackVerificationResponse>
+    verifyPaystackPayment(
+            Authentication authentication,
+            @PathVariable Long orderId,
+
+            @Valid @RequestBody
+            VerifyPaystackPaymentRequest request
+    ) {
+        Long customerId =
+                getUserId(authentication);
+
+        return ResponseEntity.ok(
+                paystackPaymentService.verifyPayment(
+                        customerId,
+                        orderId,
+                        request
+                )
+        );
+    }
+
+    @PostMapping(
+            value = "/paystack/webhook",
+            consumes = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<Void> handlePaystackWebhook(
+            @RequestHeader(
+                    value = "x-paystack-signature",
+                    required = false
+            )
+            String signature,
+
+            @RequestBody
+            String payload
+    ) {
+        paystackPaymentService.handleWebhook(
+                payload,
+                signature
+        );
+
+        return ResponseEntity.noContent().build();
     }
 
     /*
