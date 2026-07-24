@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 
 public class UpdateContactMessageRequest {
 
-    @NotNull(message = "Contact-message status is required")
+    @NotNull(message = "Status is required")
     private ContactMessageStatus status;
 
     public UpdateContactMessageRequest() {

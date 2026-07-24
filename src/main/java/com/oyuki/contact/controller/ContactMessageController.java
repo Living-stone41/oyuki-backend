@@ -1,8 +1,8 @@
 package com.oyuki.contact.controller;
 
 import com.oyuki.common.response.ApiResponse;
+import com.oyuki.contact.dto.ContactMessageRequest;
 import com.oyuki.contact.dto.ContactMessageResponse;
-import com.oyuki.contact.dto.CreateContactMessageRequest;
 import com.oyuki.contact.service.ContactMessageService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -15,21 +15,26 @@ public class ContactMessageController {
 
     private final ContactMessageService service;
 
-    public ContactMessageController(ContactMessageService service) {
+    public ContactMessageController(
+            ContactMessageService service
+    ) {
         this.service = service;
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<ContactMessageResponse>> create(
-            @Valid @RequestBody CreateContactMessageRequest request
+            @Valid @RequestBody ContactMessageRequest request
     ) {
-        ContactMessageResponse response = service.create(request);
+        ContactMessageResponse created =
+                service.create(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(ApiResponse.success(
-                        "Message sent successfully. We will reply soon.",
-                        response
-                ));
+                .body(
+                        ApiResponse.success(
+                                "Your message has been sent successfully.",
+                                created
+                        )
+                );
     }
 }
