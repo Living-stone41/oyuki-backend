@@ -4,45 +4,68 @@ import com.oyuki.auth.enums.OtpChannel;
 import com.oyuki.user.entity.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 
 @Service
 public class OtpDeliveryService {
 
-    private static final Logger log = LoggerFactory.getLogger(OtpDeliveryService.class);
+    private static final Logger log =
+            LoggerFactory.getLogger(
+                    OtpDeliveryService.class
+            );
 
-    private final JavaMailSender mailSender;
+    private static final String RESEND_EMAIL_URL =
+            "https://api.resend.com/emails";
+
     private final TwilioVerifyService twilioVerifyService;
+    private final HttpClient httpClient;
+    private final String resendApiKey;
     private final String senderEmail;
 
     public OtpDeliveryService(
-            ObjectProvider<JavaMailSender> mailSenderProvider,
             TwilioVerifyService twilioVerifyService,
 
-            @Value("${app.mail.from:}")
+            @Value("${resend.api-key:}")
+            String resendApiKey,
+
+            @Value("${resend.from-email:}")
             String senderEmail
     ) {
-        this.mailSender =
-                mailSenderProvider.getIfAvailable();
-
         this.twilioVerifyService =
                 twilioVerifyService;
+
+        this.resendApiKey =
+                resendApiKey == null
+                        ? ""
+                        : resendApiKey.trim();
 
         this.senderEmail =
                 senderEmail == null
                         ? ""
                         : senderEmail.trim();
+
+        this.httpClient =
+                HttpClient.newBuilder()
+                        .connectTimeout(
+                                Duration.ofSeconds(20)
+                        )
+                        .build();
     }
 
     /*
      * Registration OTP.
      *
      * EMAIL:
-     * The backend-generated OTP is emailed.
+     * The backend-generated OTP is sent through
+     * the Resend HTTPS API.
      *
      * PHONE:
      * Twilio Verify generates and sends its own OTP.
@@ -81,7 +104,7 @@ public class OtpDeliveryService {
     }
 
     /*
-     * Backward-compatible method.
+     * Backward-compatible registration method.
      */
     public String sendRegistrationOtp(
             User user,
@@ -95,8 +118,8 @@ public class OtpDeliveryService {
     }
 
     /*
-     * Used when resending registration OTP to the
-     * exact contact selected by the user.
+     * Used when resending a registration OTP
+     * to the exact contact selected by the user.
      */
     public String sendRegistrationOtpToContact(
             User user,
@@ -139,10 +162,11 @@ public class OtpDeliveryService {
     }
 
     /*
-     * Password reset OTP.
+     * Password-reset OTP.
      *
      * EMAIL:
-     * The locally generated OTP is sent.
+     * The locally generated OTP is sent through
+     * the Resend HTTPS API.
      *
      * PHONE:
      * Twilio Verify generates and sends its own OTP.
@@ -186,9 +210,9 @@ public class OtpDeliveryService {
     }
 
     /*
-     * Do not use this old method because password-reset
-     * delivery must verify that the destination belongs
-     * to the correct user.
+     * Do not use this old method because
+     * password-reset delivery must verify
+     * that the destination belongs to the user.
      */
     public void sendPasswordResetOtp(
             String destination,
@@ -230,11 +254,211 @@ public class OtpDeliveryService {
         );
     }
 
+    /*
+     * Sends an email through the Resend HTTPS API.
+     */
+    private void sendEmail(
+            String recipient,
+            String subject,
+            String body
+    ) {
+        validateEmailConfiguration(recipient);
+
+        String requestBody =
+                buildEmailRequestBody(
+                        recipient,
+                        subject,
+                        body
+                );
+
+        HttpRequest request =
+                HttpRequest.newBuilder()
+                        .uri(
+                                URI.create(
+                                        RESEND_EMAIL_URL
+                                )
+                        )
+                        .timeout(
+                                Duration.ofSeconds(30)
+                        )
+                        .header(
+                                "Authorization",
+                                "Bearer " + resendApiKey
+                        )
+                        .header(
+                                "Content-Type",
+                                "application/json"
+                        )
+                        .header(
+                                "Accept",
+                                "application/json"
+                        )
+                        .POST(
+                                HttpRequest.BodyPublishers
+                                        .ofString(
+                                                requestBody
+                                        )
+                        )
+                        .build();
+
+        try {
+            HttpResponse<String> response =
+                    httpClient.send(
+                            request,
+                            HttpResponse.BodyHandlers
+                                    .ofString()
+                    );
+
+            int statusCode =
+                    response.statusCode();
+
+            if (
+                    statusCode < 200 ||
+                    statusCode >= 300
+            ) {
+                log.error(
+                        "Resend rejected OTP email for {}. HTTP status: {}. Response: {}",
+                        maskEmail(recipient),
+                        statusCode,
+                        response.body()
+                );
+
+                throw new IllegalStateException(
+                        buildResendErrorMessage(
+                                statusCode,
+                                response.body()
+                        )
+                );
+            }
+
+            log.info(
+                    "OTP email sent successfully to {} through Resend",
+                    maskEmail(recipient)
+            );
+
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+
+            log.error(
+                    "OTP email delivery was interrupted for {}",
+                    maskEmail(recipient),
+                    exception
+            );
+
+            throw new IllegalStateException(
+                    "The OTP email could not be sent because the request was interrupted.",
+                    exception
+            );
+
+        } catch (IOException exception) {
+            Throwable root =
+                    rootCause(exception);
+
+            log.error(
+                    "OTP email delivery failed for {} through Resend",
+                    maskEmail(recipient),
+                    exception
+            );
+
+            throw new IllegalStateException(
+                    "The OTP email could not be sent: "
+                            + root.getClass()
+                            .getSimpleName()
+                            + " - "
+                            + safeErrorMessage(
+                            root.getMessage()
+                    ),
+                    exception
+            );
+        }
+    }
+
+    private void validateEmailConfiguration(
+            String recipient
+    ) {
+        if (
+                recipient == null ||
+                recipient.isBlank()
+        ) {
+            throw new IllegalArgumentException(
+                    "Recipient email is required"
+            );
+        }
+
+        if (resendApiKey.isBlank()) {
+            throw new IllegalStateException(
+                    "Resend email delivery is not configured. Add RESEND_API_KEY to Railway."
+            );
+        }
+
+        if (senderEmail.isBlank()) {
+            throw new IllegalStateException(
+                    "The Oyuki sender email is not configured. Add RESEND_FROM_EMAIL to Railway."
+            );
+        }
+    }
+
+    private String buildEmailRequestBody(
+            String recipient,
+            String subject,
+            String body
+    ) {
+        return """
+                {
+                  "from": "%s",
+                  "to": ["%s"],
+                  "subject": "%s",
+                  "text": "%s"
+                }
+                """.formatted(
+                escapeJson(senderEmail),
+                escapeJson(recipient),
+                escapeJson(subject),
+                escapeJson(body)
+        );
+    }
+
+    private String buildResendErrorMessage(
+            int statusCode,
+            String responseBody
+    ) {
+        String response =
+                responseBody == null ||
+                        responseBody.isBlank()
+                        ? "No response body"
+                        : responseBody;
+
+        if (statusCode == 401) {
+            return "The OTP email could not be sent because the Resend API key is invalid.";
+        }
+
+        if (statusCode == 403) {
+            return "The OTP email could not be sent because the sender domain is not verified or the sender is not allowed.";
+        }
+
+        if (statusCode == 422) {
+            return "The OTP email could not be sent because Resend rejected the email details: "
+                    + response;
+        }
+
+        if (statusCode == 429) {
+            return "The OTP email could not be sent because the email sending limit was reached. Try again shortly.";
+        }
+
+        return "The OTP email could not be sent. Resend returned HTTP "
+                + statusCode
+                + ": "
+                + response;
+    }
+
     private OtpChannel resolveChannel(
             User user,
             OtpChannel requestedChannel
     ) {
-        if (requestedChannel == OtpChannel.EMAIL) {
+        if (
+                requestedChannel ==
+                        OtpChannel.EMAIL
+        ) {
             if (
                     user.getEmail() == null ||
                     user.getEmail().isBlank()
@@ -247,7 +471,10 @@ public class OtpDeliveryService {
             return OtpChannel.EMAIL;
         }
 
-        if (requestedChannel == OtpChannel.PHONE) {
+        if (
+                requestedChannel ==
+                        OtpChannel.PHONE
+        ) {
             if (
                     user.getPhoneNumber() == null ||
                     user.getPhoneNumber().isBlank()
@@ -279,82 +506,45 @@ public class OtpDeliveryService {
         );
     }
 
-    private void sendEmail(
-            String recipient,
-            String subject,
-            String body
+    private String maskEmail(
+            String email
     ) {
         if (
-                recipient == null ||
-                recipient.isBlank()
+                email == null ||
+                !email.contains("@")
         ) {
-            throw new IllegalArgumentException(
-                    "Recipient email is required"
-            );
-        }
-
-        if (mailSender == null) {
-            throw new IllegalStateException(
-                    "Email OTP delivery is not configured. Check the Oyuki Gmail SMTP settings."
-            );
-        }
-
-        if (senderEmail.isBlank()) {
-            throw new IllegalStateException(
-                    "The Oyuki sender email is not configured"
-            );
-        }
-
-        SimpleMailMessage message =
-                new SimpleMailMessage();
-
-        message.setFrom(senderEmail);
-        message.setTo(recipient);
-        message.setSubject(subject);
-        message.setText(body);
-
-        try {
-            mailSender.send(message);
-            log.info("OTP email sent successfully to {}", maskEmail(recipient));
-
-        } catch (Exception exception) {
-            log.error(
-                    "OTP email delivery failed for {}. Sender configured: {}",
-                    maskEmail(recipient),
-                    !senderEmail.isBlank(),
-                    exception
-            );
-
-            Throwable root = rootCause(exception);
-            throw new IllegalStateException(
-                    "The OTP email could not be sent: "
-                            + root.getClass().getSimpleName()
-                            + " - "
-                            + String.valueOf(root.getMessage()),
-                    exception
-            );
-        }
-    }
-
-    private String maskEmail(String email) {
-        if (email == null || !email.contains("@")) {
             return "unknown";
         }
 
-        String[] parts = email.split("@", 2);
-        String local = parts[0];
-        String masked = local.length() <= 2
-                ? "**"
-                : local.substring(0, 2) + "***";
+        String[] parts =
+                email.split("@", 2);
+
+        String local =
+                parts[0];
+
+        String masked =
+                local.length() <= 2
+                        ? "**"
+                        : local.substring(0, 2)
+                        + "***";
 
         return masked + "@" + parts[1];
     }
 
-    private Throwable rootCause(Throwable exception) {
-        Throwable current = exception;
-        while (current.getCause() != null && current.getCause() != current) {
-            current = current.getCause();
+    private Throwable rootCause(
+            Throwable exception
+    ) {
+        Throwable current =
+                exception;
+
+        while (
+                current.getCause() != null &&
+                current.getCause() != current
+        ) {
+            current =
+                    current.getCause();
         }
+
         return current;
     }
 
@@ -426,7 +616,9 @@ public class OtpDeliveryService {
         if (
                 user.getEmail() == null ||
                 !user.getEmail()
-                        .equalsIgnoreCase(destination)
+                        .equalsIgnoreCase(
+                                destination
+                        )
         ) {
             throw new IllegalArgumentException(
                     "The supplied email address does not belong to this account"
@@ -443,7 +635,9 @@ public class OtpDeliveryService {
                 !normalizePhone(
                         user.getPhoneNumber()
                 ).equals(
-                        normalizePhone(destination)
+                        normalizePhone(
+                                destination
+                        )
                 )
         ) {
             throw new IllegalArgumentException(
@@ -499,23 +693,100 @@ public class OtpDeliveryService {
                         ""
                 );
 
-        if (cleaned.startsWith("+234")) {
+        if (
+                cleaned.startsWith("+234")
+        ) {
             return cleaned;
         }
 
-        if (cleaned.startsWith("234")) {
+        if (
+                cleaned.startsWith("234")
+        ) {
             return "+" + cleaned;
         }
 
-        if (cleaned.startsWith("0")) {
+        if (
+                cleaned.startsWith("0")
+        ) {
             return "+234"
                     + cleaned.substring(1);
         }
 
-        if (cleaned.startsWith("+")) {
+        if (
+                cleaned.startsWith("+")
+        ) {
             return cleaned;
         }
 
         return "+234" + cleaned;
+    }
+
+    private String escapeJson(
+            String value
+    ) {
+        if (value == null) {
+            return "";
+        }
+
+        StringBuilder escaped =
+                new StringBuilder();
+
+        for (
+                int index = 0;
+                index < value.length();
+                index++
+        ) {
+            char character =
+                    value.charAt(index);
+
+            switch (character) {
+                case '"' ->
+                        escaped.append("\\\"");
+
+                case '\\' ->
+                        escaped.append("\\\\");
+
+                case '\b' ->
+                        escaped.append("\\b");
+
+                case '\f' ->
+                        escaped.append("\\f");
+
+                case '\n' ->
+                        escaped.append("\\n");
+
+                case '\r' ->
+                        escaped.append("\\r");
+
+                case '\t' ->
+                        escaped.append("\\t");
+
+                default -> {
+                    if (character < 32) {
+                        escaped.append(
+                                String.format(
+                                        "\\u%04x",
+                                        (int) character
+                                )
+                        );
+                    } else {
+                        escaped.append(
+                                character
+                        );
+                    }
+                }
+            }
+        }
+
+        return escaped.toString();
+    }
+
+    private String safeErrorMessage(
+            String message
+    ) {
+        return message == null ||
+                message.isBlank()
+                ? "Unknown connection error"
+                : message;
     }
 }
