@@ -32,6 +32,9 @@ public class SecurityConfig {
                             + "http://localhost:8080,"
                             + "http://localhost:5500,"
                             + "http://127.0.0.1:5500,"
+                            + "https://oyukimarketplace.com,"
+                            + "https://www.oyukimarketplace.com,"
+                            + "https://admin.oyukimarketplace.com,"
                             + "https://*.up.railway.app}"
             )
             String allowedOrigins
@@ -68,7 +71,7 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // Public HTML pages and static files
+                        // Public frontend pages and static files
                         .requestMatchers(
                                 "/",
                                 "/index.html",
@@ -79,14 +82,14 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
-                        // Browser CORS preflight requests
+                        // CORS preflight requests
                         .requestMatchers(
                                 HttpMethod.OPTIONS,
                                 "/**"
                         )
                         .permitAll()
 
-                        // Registration, login, OTP and password reset
+                        // Authentication
                         .requestMatchers("/api/auth/**")
                         .permitAll()
 
@@ -112,12 +115,6 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
-                        // Newsletter administration
-                        .requestMatchers(
-                                "/api/newsletter/admin/**"
-                        )
-                        .hasRole("ADMIN")
-
                         // Public Farmers' Day endpoints
                         .requestMatchers(
                                 HttpMethod.GET,
@@ -125,7 +122,7 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
-                        // Public marketplace products and uploaded files
+                        // Public marketplace products and uploads
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/marketplace/products/**",
@@ -150,23 +147,38 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
-                        // Admin payment routes
-                        .requestMatchers(
-                                "/api/admin/payments/**"
-                        )
-                        .hasRole("ADMIN")
-
-                        // Paystack server-to-server webhook.
-                        // The endpoint validates x-paystack-signature.
+                        // Paystack webhook
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/payments/paystack/webhook"
                         )
                         .permitAll()
 
+                        // WebSocket endpoint
+                        .requestMatchers("/ws/**")
+                        .permitAll()
+
+                        // Newsletter administration
+                        .requestMatchers(
+                                "/api/newsletter/admin/**"
+                        )
+                        .hasRole("ADMIN")
+
                         // Farmers' Day administration
                         .requestMatchers(
                                 "/api/farmers-day/admin/**"
+                        )
+                        .hasRole("ADMIN")
+
+                        // Admin payment routes
+                        .requestMatchers(
+                                "/api/admin/payments/**"
+                        )
+                        .hasRole("ADMIN")
+
+                        // Admin contact messages
+                        .requestMatchers(
+                                "/api/admin/contact-messages/**"
                         )
                         .hasRole("ADMIN")
 
@@ -178,24 +190,6 @@ public class SecurityConfig {
                                 "/api/wallet/admin/**"
                         )
                         .hasRole("ADMIN")
-
-                        // Customer complaints and export requests
-                        .requestMatchers(
-                                "/api/complaints/**",
-                                "/api/export-requests/**"
-                        )
-                        .hasRole("CUSTOMER")
-
-                        // Provider KYC and wallet routes
-                        .requestMatchers(
-                                "/api/kyc/**",
-                                "/api/wallet/**"
-                        )
-                        .hasAnyRole("SELLER", "KITCHEN")
-
-                        // Chat requires login
-                        .requestMatchers("/api/chat/**")
-                        .authenticated()
 
                         // Admin delivery management
                         .requestMatchers(
@@ -213,6 +207,24 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**")
                         .hasRole("ADMIN")
 
+                        // Customer complaints and export requests
+                        .requestMatchers(
+                                "/api/complaints/**",
+                                "/api/export-requests/**"
+                        )
+                        .hasRole("CUSTOMER")
+
+                        // Provider KYC and wallet routes
+                        .requestMatchers(
+                                "/api/kyc/**",
+                                "/api/wallet/**"
+                        )
+                        .hasAnyRole("SELLER", "KITCHEN")
+
+                        // Chat
+                        .requestMatchers("/api/chat/**")
+                        .authenticated()
+
                         // Logistics administration
                         .requestMatchers("/api/logistics/**")
                         .hasAnyRole(
@@ -221,11 +233,8 @@ public class SecurityConfig {
                         )
 
                         // Rider endpoints
-                        .requestMatchers("/api/rider/**")
-                        .hasRole("RIDER")
-
-                        // Rider delivery endpoints
                         .requestMatchers(
+                                "/api/rider/**",
                                 "/api/rider/order-deliveries/**"
                         )
                         .hasRole("RIDER")
@@ -355,17 +364,7 @@ public class SecurityConfig {
                         // Coupons
                         .requestMatchers("/api/coupons/**")
                         .hasRole("CUSTOMER")
-                        .requestMatchers(
-        HttpMethod.POST,
-        "/api/contact"
-)
-.permitAll()
-.requestMatchers(
-        "/api/admin/contact-messages/**"
-)
-.hasRole("ADMIN")
-.requestMatchers("/ws/**")
-.permitAll()
+
                         // Everything else requires authentication
                         .anyRequest()
                         .authenticated()
@@ -393,11 +392,6 @@ public class SecurityConfig {
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
-        /*
-         * Allows exact domains and patterns such as:
-         * https://example.up.railway.app
-         * https://*.up.railway.app
-         */
         configuration.setAllowedOriginPatterns(
                 allowedOriginPatterns
         );
