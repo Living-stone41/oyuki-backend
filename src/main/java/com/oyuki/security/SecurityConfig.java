@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -21,11 +22,8 @@ public class SecurityConfig {
             JwtAuthenticationFilter jwtAuthenticationFilter,
             AuthenticationProvider authenticationProvider
     ) {
-        this.jwtAuthenticationFilter =
-                jwtAuthenticationFilter;
-
-        this.authenticationProvider =
-                authenticationProvider;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.authenticationProvider = authenticationProvider;
     }
 
     @Bean
@@ -36,12 +34,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
 
-                /*
-                 * Uses the CorsConfigurationSource bean
-                 * defined inside CorsConfig.java.
-                 */
-                .cors(cors -> {
-                })
+                .cors(Customizer.withDefaults())
 
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
@@ -52,7 +45,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
 
                         /*
-                         * Allow browser CORS preflight requests.
+                         * Allow all browser CORS preflight requests.
                          */
                         .requestMatchers(
                                 HttpMethod.OPTIONS,
@@ -60,7 +53,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         /*
-                         * Public health and error endpoints.
+                         * Public Railway health routes.
                          */
                         .requestMatchers(
                                 "/",
@@ -69,49 +62,51 @@ public class SecurityConfig {
                         ).permitAll()
 
                         /*
-                         * Authentication endpoints.
+                         * Public authentication routes.
                          */
                         .requestMatchers(
                                 "/api/auth/**"
                         ).permitAll()
 
                         /*
-                         * Public marketplace endpoints.
+                         * Public marketplace routes.
                          */
                         .requestMatchers(
+                                HttpMethod.GET,
                                 "/api/marketplace/**"
                         ).permitAll()
 
                         /*
-                         * Public reviews.
+                         * Public provider reviews.
                          */
                         .requestMatchers(
+                                HttpMethod.GET,
                                 "/api/reviews/providers/**"
                         ).permitAll()
 
                         /*
-                         * Newsletter subscription.
+                         * Public newsletter subscription.
                          */
                         .requestMatchers(
                                 "/api/newsletter/**"
                         ).permitAll()
 
                         /*
-                         * Public uploaded product and profile images.
+                         * Public uploaded images and files.
                          */
                         .requestMatchers(
                                 "/uploads/**"
                         ).permitAll()
 
                         /*
-                         * Administrator endpoints.
+                         * Administrator routes.
                          */
                         .requestMatchers(
                                 "/api/admin/**"
                         ).hasRole("ADMIN")
 
                         /*
-                         * Account officer endpoints.
+                         * Account officer routes.
                          */
                         .requestMatchers(
                                 "/api/account-officer/**"
@@ -121,10 +116,11 @@ public class SecurityConfig {
                         )
 
                         /*
-                         * Logistics administrator endpoints.
+                         * Logistics administrator routes.
                          */
                         .requestMatchers(
-                                "/api/logistics-admin/**"
+                                "/api/logistics-admin/**",
+                                "/api/logistics/**"
                         ).hasAnyRole(
                                 "LOGISTIC_ADMIN",
                                 "LOGISTICS_ADMIN",
@@ -132,7 +128,7 @@ public class SecurityConfig {
                         )
 
                         /*
-                         * Rider endpoints.
+                         * Rider routes.
                          */
                         .requestMatchers(
                                 "/api/rider/**"
@@ -142,7 +138,30 @@ public class SecurityConfig {
                         )
 
                         /*
-                         * Every other endpoint requires login.
+                         * Seller and farmer routes.
+                         */
+                        .requestMatchers(
+                                "/api/seller/**",
+                                "/api/provider/**"
+                        ).hasAnyRole(
+                                "SELLER",
+                                "FARMER",
+                                "KITCHEN",
+                                "ADMIN"
+                        )
+
+                        /*
+                         * Kitchen profile routes.
+                         */
+                        .requestMatchers(
+                                "/api/kitchen/**"
+                        ).hasAnyRole(
+                                "KITCHEN",
+                                "ADMIN"
+                        )
+
+                        /*
+                         * Every other route requires authentication.
                          */
                         .anyRequest()
                         .authenticated()
