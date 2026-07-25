@@ -2060,4 +2060,4 @@ window.Oyuki = {
       Cart.updateBadge();
     }
   );
-})
+})();
