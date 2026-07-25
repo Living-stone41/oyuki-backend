@@ -1,4 +1,4 @@
-/* Oyuki HTML frontend — Spring Boot API connected */
+/* Oyuki frontend — QServers frontend + Railway backend */
 
 (function () {
   'use strict';
@@ -10,7 +10,7 @@
     'https://illustrious-nurturing-production-8169.up.railway.app';
 
   const API_BASE_URL =
-    'https://illustrious-nurturing-production-8169.up.railway.app/api';
+    `${API_ORIGIN}/api`;
 
   const ADMIN_HOST =
     'admin.oyukimarketplace.com';
@@ -20,7 +20,7 @@
     ADMIN_HOST;
 
   const FALLBACK_IMAGE =
-    'assets/images/hero.jpg';
+    '/assets/images/hero.jpg';
 
   const STORAGE = {
     token: 'oyuki_token',
@@ -29,7 +29,6 @@
     recentlyViewed: 'oyuki_recently_viewed'
   };
 
-  // Kept so older dashboard scripts do not crash.
   const K = {
     users: 'oy_users',
     cart: 'oy_cart',
@@ -44,26 +43,92 @@
     addresses: 'oy_addresses'
   };
 
-  const load = (key, fallback = []) => {
+  function load(key, fallback = []) {
     try {
-      return JSON.parse(localStorage.getItem(key)) ?? fallback;
-    } catch {
+      const value =
+        localStorage.getItem(key);
+
+      return value
+        ? JSON.parse(value)
+        : fallback;
+    } catch (error) {
+      console.warn(
+        `Unable to read ${key}:`,
+        error
+      );
+
       return fallback;
     }
-  };
+  }
 
-  const save = (key, value) => {
-    localStorage.setItem(key, JSON.stringify(value));
-  };
+  function save(key, value) {
+    localStorage.setItem(
+      key,
+      JSON.stringify(value)
+    );
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '').replace(
+      /[&<>'"]/g,
+      character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+      })[character]
+    );
+  }
+
+  function unwrap(payload) {
+    if (
+      payload &&
+      Object.prototype.hasOwnProperty.call(
+        payload,
+        'data'
+      )
+    ) {
+      return payload.data;
+    }
+
+    return payload;
+  }
+
+  function errorMessage(
+    payload,
+    fallback
+  ) {
+    if (!payload) {
+      return fallback;
+    }
+
+    if (typeof payload === 'string') {
+      return payload;
+    }
+
+    return (
+      payload.message ||
+      payload.rootMessage ||
+      payload.error ||
+      fallback
+    );
+  }
 
   const Toast = {
     show(message, kind = '') {
-      const element = document.createElement('div');
+      const element =
+        document.createElement('div');
 
-      element.className = `oy-toast ${kind}`;
-      element.textContent = message;
+      element.className =
+        `oy-toast ${kind}`;
 
-      document.body.appendChild(element);
+      element.textContent =
+        message;
+
+      document.body.appendChild(
+        element
+      );
 
       requestAnimationFrame(() => {
         element.classList.add('show');
@@ -79,20 +144,11 @@
     }
   };
 
-  function errorMessage(payload, fallback) {
-    if (!payload) return fallback;
-    if (typeof payload === 'string') return payload;
-
-    return (
-      payload.message ||
-      payload.rootMessage ||
-      payload.error ||
-      fallback
-    );
-  }
-
   const Api = {
-    async request(path, options = {}) {
+    async request(
+      path,
+      options = {}
+    ) {
       const {
         method = 'GET',
         body,
@@ -106,10 +162,14 @@
         ...headers
       };
 
-      const token = localStorage.getItem(STORAGE.token);
+      const token =
+        localStorage.getItem(
+          STORAGE.token
+        );
 
       if (auth && token) {
-        finalHeaders.Authorization = `Bearer ${token}`;
+        finalHeaders.Authorization =
+          `Bearer ${token}`;
       }
 
       let requestBody = body;
@@ -119,20 +179,29 @@
         body !== null &&
         !(body instanceof FormData)
       ) {
-        finalHeaders['Content-Type'] = 'application/json';
-        requestBody = JSON.stringify(body);
+        finalHeaders['Content-Type'] =
+          'application/json';
+
+        requestBody =
+          JSON.stringify(body);
       }
 
       let response;
 
       try {
-        response = await fetch(`${API_BASE_URL}${path}`, {
-          method,
-          headers: finalHeaders,
-          body: requestBody
-        });
+        response = await fetch(
+          `${API_BASE_URL}${path}`,
+          {
+            method,
+            headers: finalHeaders,
+            body: requestBody
+          }
+        );
       } catch (error) {
-        console.error('API connection error:', error);
+        console.error(
+          'API connection error:',
+          error
+        );
 
         throw new Error(
           'Cannot reach the Oyuki server. Check your internet connection and try again.'
@@ -141,13 +210,17 @@
 
       if (raw) {
         if (!response.ok) {
-          throw new Error(`Request failed (${response.status})`);
+          throw new Error(
+            `Request failed (${response.status})`
+          );
         }
 
         return response;
       }
 
-      const text = await response.text();
+      const text =
+        await response.text();
+
       let payload = null;
 
       if (text) {
@@ -159,9 +232,18 @@
       }
 
       if (!response.ok) {
-        if (response.status === 401 && auth && token) {
-          localStorage.removeItem(STORAGE.token);
-          localStorage.removeItem(STORAGE.user);
+        if (
+          response.status === 401 &&
+          auth &&
+          token
+        ) {
+          localStorage.removeItem(
+            STORAGE.token
+          );
+
+          localStorage.removeItem(
+            STORAGE.user
+          );
         }
 
         throw new Error(
@@ -176,7 +258,10 @@
     },
 
     get(path, auth = true) {
-      return this.request(path, { auth });
+      return this.request(
+        path,
+        { auth }
+      );
     },
 
     post(path, body, auth = true) {
@@ -211,88 +296,97 @@
     }
   };
 
-  function unwrap(payload) {
-    return (
-      payload &&
-      Object.prototype.hasOwnProperty.call(payload, 'data')
-    )
-      ? payload.data
-      : payload;
+  function rolePage(role) {
+    const value =
+      String(role || '')
+        .toUpperCase();
+
+    if (value === 'CUSTOMER') {
+      return '/customer.html';
+    }
+
+    if (
+      value === 'SELLER' ||
+      value === 'FARMER'
+    ) {
+      return '/seller.html';
+    }
+
+    if (value === 'KITCHEN') {
+      return '/kitchen.html';
+    }
+
+    if (value === 'ADMIN') {
+      return '/admin.html';
+    }
+
+    if (
+      value === 'LOGISTICS_ADMIN' ||
+      value === 'LOGISTIC_ADMIN'
+    ) {
+      return '/logistics-admin.html';
+    }
+
+    if (
+      value === 'ACCOUNT_OFFICER'
+    ) {
+      return '/account-officer.html';
+    }
+
+    if (value === 'RIDER') {
+      return '/tracking.html';
+    }
+
+    return '/home.html';
   }
-
-function rolePage(role) {
-  const value =
-    String(role || '').toUpperCase();
-
-  if (value === 'CUSTOMER') {
-    return `${WEBSITE_ORIGIN}/customer.html`;
-  }
-
-  if (
-    value === 'SELLER' ||
-    value === 'FARMER'
-  ) {
-    return `${WEBSITE_ORIGIN}/seller.html`;
-  }
-
-  if (value === 'KITCHEN') {
-    return `${WEBSITE_ORIGIN}/kitchen.html`;
-  }
-
-  if (value === 'ADMIN') {
-    return `${WEBSITE_ORIGIN}/admin.html`;
-  }
-
-  if (
-    value === 'LOGISTICS_ADMIN' ||
-    value === 'LOGISTIC_ADMIN'
-  ) {
-    return `${WEBSITE_ORIGIN}/logistics-admin.html`;
-  }
-
-  if (value === 'ACCOUNT_OFFICER') {
-    return `${WEBSITE_ORIGIN}/account-officer.html`;
-  }
-
-  if (value === 'RIDER') {
-    return `${WEBSITE_ORIGIN}/tracking.html`;
-  }
-
-  return `${WEBSITE_ORIGIN}/home.html`;
-}
 
   const Auth = {
     current() {
-      return load(STORAGE.user, null);
+      return load(
+        STORAGE.user,
+        null
+      );
     },
 
     token() {
-      return localStorage.getItem(STORAGE.token);
+      return localStorage.getItem(
+        STORAGE.token
+      );
     },
 
     isCustomer() {
       const user = this.current();
 
-      return (
+      return Boolean(
         user &&
-        String(user.role).toUpperCase() === 'CUSTOMER'
+        String(user.role)
+          .toUpperCase() ===
+          'CUSTOMER'
       );
     },
 
     isAdmin() {
       const user = this.current();
 
-      return (
+      return Boolean(
         user &&
-        String(user.role).toUpperCase() === 'ADMIN'
+        String(user.role)
+          .toUpperCase() ===
+          'ADMIN'
       );
     },
 
-    async login(identifier, password) {
+    async login(
+      identifier,
+      password
+    ) {
       const result = unwrap(
         await Api.post(
           '/auth/login',
-          { identifier, password },
+          {
+            identifier,
+            password
+          },
           false
         )
       );
@@ -303,7 +397,10 @@ function rolePage(role) {
         );
       }
 
-      localStorage.setItem(STORAGE.token, result.token);
+      localStorage.setItem(
+        STORAGE.token,
+        result.token
+      );
 
       let user = {
         id: result.userId,
@@ -313,21 +410,31 @@ function rolePage(role) {
         status: result.status
       };
 
-      save(STORAGE.user, user);
+      save(
+        STORAGE.user,
+        user
+      );
 
       try {
-        const me = unwrap(await Api.get('/users/me'));
+        const me = unwrap(
+          await Api.get('/users/me')
+        );
 
         user = {
           ...user,
           ...me,
-          userId: me.id || result.userId
+          userId:
+            me.id ||
+            result.userId
         };
 
-        save(STORAGE.user, user);
+        save(
+          STORAGE.user,
+          user
+        );
       } catch (error) {
         console.warn(
-          'Unable to load complete user profile:',
+          'Unable to load complete profile:',
           error
         );
       }
@@ -336,73 +443,108 @@ function rolePage(role) {
     },
 
     async register(data) {
-      const response = await Api.post(
-        '/auth/register',
-        data,
-        false
-      );
+      const response =
+        await Api.post(
+          '/auth/register',
+          data,
+          false
+        );
 
       localStorage.setItem(
         STORAGE.pendingContact,
-        data.email || data.phoneNumber || ''
+        data.email ||
+        data.phoneNumber ||
+        ''
       );
 
       return response;
     },
 
-    async verifyRegistration(contact, token) {
-      const response = await Api.post(
-        '/auth/verify-registration',
-        { contact, token },
-        false
-      );
+    async verifyRegistration(
+      contact,
+      token
+    ) {
+      const response =
+        await Api.post(
+          '/auth/verify-registration',
+          {
+            contact,
+            token
+          },
+          false
+        );
 
-      localStorage.removeItem(STORAGE.pendingContact);
+      localStorage.removeItem(
+        STORAGE.pendingContact
+      );
 
       return response;
     },
 
     pendingContact() {
       return (
-        localStorage.getItem(STORAGE.pendingContact) || ''
+        localStorage.getItem(
+          STORAGE.pendingContact
+        ) || ''
       );
     },
 
     logout() {
-      localStorage.removeItem(STORAGE.token);
-      localStorage.removeItem(STORAGE.user);
+      localStorage.removeItem(
+        STORAGE.token
+      );
 
-      location.href = IS_ADMIN_SUBDOMAIN
-        ? 'admin-login.html'
-        : 'login.html';
+      localStorage.removeItem(
+        STORAGE.user
+      );
+
+      window.location.href =
+        IS_ADMIN_SUBDOMAIN
+          ? '/admin-login.html'
+          : '/home.html';
     },
 
     require(role) {
-      const user = this.current();
+      const user =
+        this.current();
 
-      if (!user || !this.token()) {
+      if (
+        !user ||
+        !this.token()
+      ) {
         const currentPage =
-          location.pathname.split('/').pop() ||
+          window.location.pathname
+            .split('/')
+            .pop() ||
           'home.html';
 
-        const redirect = currentPage + location.hash;
+        const redirect =
+          currentPage +
+          window.location.search +
+          window.location.hash;
 
-        location.href = IS_ADMIN_SUBDOMAIN
-          ? `admin-login.html?redirect=${encodeURIComponent(redirect)}`
-          : `login.html?redirect=${encodeURIComponent(redirect)}`;
+        window.location.href =
+          IS_ADMIN_SUBDOMAIN
+            ? `/admin-login.html?redirect=${encodeURIComponent(redirect)}`
+            : `/login.html?redirect=${encodeURIComponent(redirect)}`;
 
         return null;
       }
 
       const currentRole =
-        String(user.role || '').toUpperCase();
+        String(
+          user.role || ''
+        ).toUpperCase();
 
       const requiredRole =
-        String(role || '').toUpperCase();
+        String(
+          role || ''
+        ).toUpperCase();
 
       if (
         requiredRole &&
-        currentRole !== requiredRole &&
+        currentRole !==
+          requiredRole &&
         currentRole !== 'ADMIN'
       ) {
         Toast.show(
@@ -411,7 +553,8 @@ function rolePage(role) {
         );
 
         setTimeout(() => {
-          location.href = rolePage(currentRole);
+          window.location.href =
+            rolePage(currentRole);
         }, 400);
 
         return null;
@@ -421,13 +564,18 @@ function rolePage(role) {
     },
 
     async me() {
-      const user = unwrap(await Api.get('/users/me'));
+      const user = unwrap(
+        await Api.get('/users/me')
+      );
 
-      save(STORAGE.user, {
-        ...this.current(),
-        ...user,
-        userId: user.id
-      });
+      save(
+        STORAGE.user,
+        {
+          ...this.current(),
+          ...user,
+          userId: user.id
+        }
+      );
 
       return user;
     }
@@ -438,32 +586,47 @@ function rolePage(role) {
       return FALLBACK_IMAGE;
     }
 
-    if (/^https?:\/\//i.test(value)) {
+    if (
+      /^https?:\/\//i.test(value)
+    ) {
       return value;
     }
 
-    if (value.startsWith('/uploads/')) {
+    if (
+      value.startsWith('/uploads/')
+    ) {
       return `${API_ORIGIN}${value}`;
     }
 
-    if (value.startsWith('uploads/')) {
+    if (
+      value.startsWith('uploads/')
+    ) {
       return `${API_ORIGIN}/${value}`;
     }
 
-    return value;
+    if (value.startsWith('/')) {
+      return value;
+    }
+
+    return `/${value}`;
   }
 
   function unitLabel(variant) {
-    if (!variant) return '';
+    if (!variant) {
+      return '';
+    }
 
-    const raw = String(
-      variant.measurementUnit || ''
-    )
-      .replaceAll('_', ' ')
-      .toLowerCase();
+    const raw =
+      String(
+        variant.measurementUnit ||
+        ''
+      )
+        .replaceAll('_', ' ')
+        .toLowerCase();
 
     const unit = raw
-      ? raw.charAt(0).toUpperCase() + raw.slice(1)
+      ? raw.charAt(0).toUpperCase() +
+        raw.slice(1)
       : '';
 
     return `${Number(
@@ -471,43 +634,66 @@ function rolePage(role) {
     ).toLocaleString('en-NG')} ${unit}`;
   }
 
-  function primaryVariant(product) {
-    const variants = Array.isArray(product.variants)
-      ? product.variants
-      : [];
+  function primaryVariant(
+    product
+  ) {
+    const variants =
+      Array.isArray(product.variants)
+        ? product.variants
+        : [];
 
     return (
       variants.find(
         variant =>
           variant.available &&
-          Number(variant.stockQuantity) > 0
+          Number(
+            variant.stockQuantity
+          ) > 0
       ) ||
       variants[0] ||
       null
     );
   }
 
-  function normalizeProduct(product) {
-    const variant = primaryVariant(product);
+  function normalizeProduct(
+    product
+  ) {
+    const variant =
+      primaryVariant(product);
 
-    const images = Array.isArray(product.images)
-      ? product.images
-      : [];
+    const images =
+      Array.isArray(product.images)
+        ? product.images
+        : [];
 
     const primary =
-      images.find(image => image.primaryImage) ||
+      images.find(
+        image =>
+          image.primaryImage
+      ) ||
       images[0];
 
     return {
       ...product,
-      price: Number(variant?.price || 0),
-      variantId: variant?.id || null,
+      price: Number(
+        variant?.price || 0
+      ),
+      variantId:
+        variant?.id || null,
       variant,
-      unit: unitLabel(variant),
-      image: imageUrl(primary?.imageUrl),
-      rating: Number(product.averageRating || 0),
-      desc: product.description || '',
-      seller: product.ownerName || '',
+      unit:
+        unitLabel(variant),
+      image:
+        imageUrl(
+          primary?.imageUrl
+        ),
+      rating: Number(
+        product.averageRating || 0
+      ),
+      desc:
+        product.description || '',
+      seller:
+        product.ownerName || '',
       location: [
         product.area,
         product.lga,
@@ -520,63 +706,93 @@ function rolePage(role) {
 
   const Products = {
     async list(filters = {}) {
-      const params = new URLSearchParams();
+      const params =
+        new URLSearchParams();
 
-      Object.entries(filters).forEach(
-        ([key, value]) => {
-          if (
-            value !== undefined &&
-            value !== null &&
-            value !== '' &&
-            value !== 'All'
-          ) {
-            params.set(key, value);
+      Object.entries(filters)
+        .forEach(
+          ([key, value]) => {
+            if (
+              value !== undefined &&
+              value !== null &&
+              value !== '' &&
+              value !== 'All'
+            ) {
+              params.set(
+                key,
+                value
+              );
+            }
           }
-        }
+        );
+
+      const suffix =
+        params.toString()
+          ? `?${params.toString()}`
+          : '';
+
+      const products =
+        unwrap(
+          await Api.get(
+            `/marketplace/products${suffix}`,
+            false
+          )
+        );
+
+      const list =
+        Array.isArray(products)
+          ? products
+          : [];
+
+      return list.map(
+        normalizeProduct
       );
-
-      const suffix = params.toString()
-        ? `?${params.toString()}`
-        : '';
-
-      const products = await Api.get(
-        `/marketplace/products${suffix}`,
-        false
-      );
-
-      return (products || []).map(normalizeProduct);
     },
 
     async get(id) {
-      const product = await Api.get(
-        `/marketplace/products/${id}`,
-        false
+      const product = unwrap(
+        await Api.get(
+          `/marketplace/products/${id}`,
+          false
+        )
       );
 
-      return normalizeProduct(product);
+      return normalizeProduct(
+        product
+      );
     },
 
     async mine() {
-      const products = await Api.get('/products');
+      const products = unwrap(
+        await Api.get('/products')
+      );
 
-      return (products || []).map(normalizeProduct);
+      return (
+        Array.isArray(products)
+          ? products
+          : []
+      ).map(normalizeProduct);
     }
   };
 
   const Cart = {
-    async get() {
+    get() {
       return Api.get('/cart');
     },
 
-    async add(variantId, quantity = 1) {
-      const user = Auth.current();
-
-      if (!user || !Auth.token()) {
-        location.href =
-          'login.html?redirect=' +
-          encodeURIComponent(
-            location.pathname + location.search
-          );
+    async add(
+      variantId,
+      quantity = 1
+    ) {
+      if (
+        !Auth.current() ||
+        !Auth.token()
+      ) {
+        window.location.href =
+          `/login.html?redirect=${encodeURIComponent(
+            window.location.pathname +
+            window.location.search
+          )}`;
 
         return null;
       }
@@ -587,130 +803,180 @@ function rolePage(role) {
         );
       }
 
-      const cart = await Api.post('/cart/items', {
-        variantId: Number(variantId),
-        quantity: Number(quantity)
-      });
+      const cart =
+        await Api.post(
+          '/cart/items',
+          {
+            variantId:
+              Number(variantId),
+            quantity:
+              Number(quantity)
+          }
+        );
 
-      await this.updateBadge(cart);
-
-      Toast.show('Added to cart', 'success');
-
-      return cart;
-    },
-
-    async update(cartItemId, quantity) {
-      const cart = await Api.put(
-        `/cart/items/${cartItemId}`,
-        { quantity: Number(quantity) }
+      await this.updateBadge(
+        cart
       );
 
-      await this.updateBadge(cart);
+      Toast.show(
+        'Added to cart',
+        'success'
+      );
 
       return cart;
     },
 
-    async remove(cartItemId) {
-      const cart = await Api.delete(
+    update(
+      cartItemId,
+      quantity
+    ) {
+      return Api.put(
+        `/cart/items/${cartItemId}`,
+        {
+          quantity:
+            Number(quantity)
+        }
+      );
+    },
+
+    remove(cartItemId) {
+      return Api.delete(
         `/cart/items/${cartItemId}`
       );
-
-      await this.updateBadge(cart);
-
-      Toast.show('Item removed');
-
-      return cart;
     },
 
-    async clear() {
-      const cart = await Api.delete('/cart/clear');
-
-      await this.updateBadge(cart);
-
-      return cart;
+    clear() {
+      return Api.delete(
+        '/cart/clear'
+      );
     },
 
-    async updateBadge(cartData = null) {
-      const badge = document.getElementById('cart-badge');
+    async updateBadge(
+      cartData = null
+    ) {
+      const badge =
+        document.getElementById(
+          'cart-badge'
+        );
 
-      if (!badge) return;
+      if (!badge) {
+        return;
+      }
 
-      if (!Auth.isCustomer() || !Auth.token()) {
-        badge.style.display = 'none';
+      if (
+        !Auth.isCustomer() ||
+        !Auth.token()
+      ) {
+        badge.style.display =
+          'none';
+
         return;
       }
 
       try {
-        const cart = cartData || await this.get();
-        const count = Number(cart?.totalItems || 0);
+        const cart =
+          cartData ||
+          await this.get();
 
-        badge.textContent = count;
-        badge.style.display = count
-          ? 'inline-block'
-          : 'none';
+        const count =
+          Number(
+            cart?.totalItems || 0
+          );
+
+        badge.textContent =
+          count;
+
+        badge.style.display =
+          count
+            ? 'inline-block'
+            : 'none';
       } catch {
-        badge.style.display = 'none';
+        badge.style.display =
+          'none';
       }
     }
   };
 
   const Wishlist = {
-    async list() {
-      return Api.get('/wishlist');
+    list() {
+      return Api.get(
+        '/wishlist'
+      );
     },
 
-    async check(productId) {
-      return Api.get(`/wishlist/check/${productId}`);
+    check(productId) {
+      return Api.get(
+        `/wishlist/check/${productId}`
+      );
     },
 
-    async add(productId) {
+    add(productId) {
       return Api.post(
         `/wishlist/products/${productId}`,
         {}
       );
     },
 
-    async remove(productId) {
+    remove(productId) {
       return Api.delete(
         `/wishlist/products/${productId}`
       );
     },
 
-    async toggle(productId, button = null) {
-      if (!Auth.isCustomer()) {
-        location.href =
-          'login.html?redirect=' +
-          encodeURIComponent(
-            location.pathname + location.search
-          );
+    async toggle(
+      productId,
+      button = null
+    ) {
+      if (
+        !Auth.current() ||
+        !Auth.token()
+      ) {
+        window.location.href =
+          `/login.html?redirect=${encodeURIComponent(
+            window.location.pathname +
+            window.location.search
+          )}`;
 
         return;
       }
 
       const saved =
-        button?.dataset.saved === 'true';
+        button?.dataset.saved ===
+        'true';
 
       if (saved) {
-        await this.remove(productId);
+        await this.remove(
+          productId
+        );
 
         if (button) {
-          button.dataset.saved = 'false';
+          button.dataset.saved =
+            'false';
         }
 
-        Toast.show('Removed from wishlist');
+        Toast.show(
+          'Removed from wishlist'
+        );
       } else {
-        await this.add(productId);
+        await this.add(
+          productId
+        );
 
         if (button) {
-          button.dataset.saved = 'true';
+          button.dataset.saved =
+            'true';
         }
 
-        Toast.show('Saved to wishlist', 'success');
+        Toast.show(
+          'Saved to wishlist',
+          'success'
+        );
       }
 
       if (button) {
         const isSaved =
-          button.dataset.saved === 'true';
+          button.dataset.saved ===
+          'true';
 
         button.innerHTML = `
           <i class="bi bi-heart${isSaved ? '-fill' : ''}"></i>
@@ -721,19 +987,29 @@ function rolePage(role) {
 
   const Addresses = {
     list() {
-      return Api.get('/addresses');
+      return Api.get(
+        '/addresses'
+      );
     },
 
     get(id) {
-      return Api.get(`/addresses/${id}`);
+      return Api.get(
+        `/addresses/${id}`
+      );
     },
 
     create(data) {
-      return Api.post('/addresses', data);
+      return Api.post(
+        '/addresses',
+        data
+      );
     },
 
     update(id, data) {
-      return Api.put(`/addresses/${id}`, data);
+      return Api.put(
+        `/addresses/${id}`,
+        data
+      );
     },
 
     setDefault(id) {
@@ -744,49 +1020,71 @@ function rolePage(role) {
     },
 
     remove(id) {
-      return Api.delete(`/addresses/${id}`);
+      return Api.delete(
+        `/addresses/${id}`
+      );
     }
   };
 
   const Delivery = {
     calculate(addressId) {
-      return Api.post('/delivery-fees/calculate', {
-        addressId: Number(addressId)
-      });
+      return Api.post(
+        '/delivery-fees/calculate',
+        {
+          addressId:
+            Number(addressId)
+        }
+      );
     }
   };
 
   const Coupons = {
     validate(data) {
-      return Api.post('/coupons/validate', data);
+      return Api.post(
+        '/coupons/validate',
+        data
+      );
     }
   };
 
   const Orders = {
     checkout(data) {
-      return Api.post('/orders/checkout', data);
+      return Api.post(
+        '/orders/checkout',
+        data
+      );
     },
 
     list() {
-      return Api.get('/orders/my');
+      return Api.get(
+        '/orders/my'
+      );
     },
 
     get(id) {
-      return Api.get(`/orders/my/${id}`);
+      return Api.get(
+        `/orders/my/${id}`
+      );
     }
   };
 
   const CustomerPayments = {
     bankAccount() {
-      return Api.get('/payments/bank-account');
+      return Api.get(
+        '/payments/bank-account'
+      );
     },
 
     list() {
-      return Api.get('/payments/my');
+      return Api.get(
+        '/payments/my'
+      );
     },
 
     forOrder(orderId) {
-      return Api.get(`/payments/orders/${orderId}`);
+      return Api.get(
+        `/payments/orders/${orderId}`
+      );
     },
 
     upload(orderId, data) {
@@ -797,28 +1095,14 @@ function rolePage(role) {
           body: data
         }
       );
-    },
-
-    async receipt(id) {
-      const response = await Api.request(
-        `/payments/proofs/${id}/receipt`,
-        { raw: true }
-      );
-
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-
-      window.open(url, '_blank', 'noopener');
-
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
-      }, 60000);
     }
   };
 
   const Recommendations = {
     record(product) {
-      if (!product?.id) return;
+      if (!product?.id) {
+        return;
+      }
 
       const existing = load(
         STORAGE.recentlyViewed,
@@ -828,15 +1112,23 @@ function rolePage(role) {
       const item = {
         id: product.id,
         name: product.name,
-        category: product.category,
-        ownerName: product.ownerName,
+        category:
+          product.category,
+        ownerName:
+          product.ownerName,
         image: product.image,
         price: product.price,
         unit: product.unit,
-        variantId: product.variantId,
-        rating: product.rating,
-        viewCount: Number(product.viewCount || 0),
-        viewedAt: new Date().toISOString()
+        variantId:
+          product.variantId,
+        rating:
+          product.rating,
+        viewCount:
+          Number(
+            product.viewCount || 0
+          ),
+        viewedAt:
+          new Date().toISOString()
       };
 
       save(
@@ -845,7 +1137,8 @@ function rolePage(role) {
           item,
           ...existing.filter(
             entry =>
-              Number(entry.id) !== Number(item.id)
+              Number(entry.id) !==
+              Number(item.id)
           )
         ].slice(0, 12)
       );
@@ -858,24 +1151,39 @@ function rolePage(role) {
       ).slice(0, limit);
     },
 
-    async popular(excludedIds = [], limit = 4) {
-      const excluded = new Set(
-        excludedIds.map(Number)
-      );
+    async popular(
+      excludedIds = [],
+      limit = 4
+    ) {
+      const excluded =
+        new Set(
+          excludedIds.map(Number)
+        );
 
-      const products = await Products.list();
+      const products =
+        await Products.list();
 
       return products
         .filter(
           product =>
-            !excluded.has(Number(product.id))
+            !excluded.has(
+              Number(product.id)
+            )
         )
         .sort(
           (first, second) =>
-            Number(second.viewCount || 0) -
-              Number(first.viewCount || 0) ||
-            Number(second.rating || 0) -
-              Number(first.rating || 0)
+            Number(
+              second.viewCount || 0
+            ) -
+              Number(
+                first.viewCount || 0
+              ) ||
+            Number(
+              second.rating || 0
+            ) -
+              Number(
+                first.rating || 0
+              )
         )
         .slice(0, limit);
     }
@@ -915,7 +1223,10 @@ function rolePage(role) {
     verify(contact, token) {
       return Api.post(
         '/auth/verify-reset-token',
-        { contact, token },
+        {
+          contact,
+          token
+        },
         false
       );
     },
@@ -942,7 +1253,8 @@ function rolePage(role) {
   const ProviderProfiles = {
     get(role) {
       const type =
-        String(role || '').toUpperCase();
+        String(role || '')
+          .toUpperCase();
 
       return Api.get(
         type === 'KITCHEN'
@@ -953,7 +1265,8 @@ function rolePage(role) {
 
     save(role, data) {
       const type =
-        String(role || '').toUpperCase();
+        String(role || '')
+          .toUpperCase();
 
       return Api.put(
         type === 'KITCHEN'
@@ -963,23 +1276,35 @@ function rolePage(role) {
       );
     },
 
-    upload(role, kind, file) {
+    upload(
+      role,
+      kind,
+      file
+    ) {
       const type =
-        String(role || '').toUpperCase();
+        String(role || '')
+          .toUpperCase();
 
       const base =
         type === 'KITCHEN'
           ? '/kitchen/profile'
           : '/seller/profile';
 
-      const form = new FormData();
+      const form =
+        new FormData();
 
-      form.append('file', file);
+      form.append(
+        'file',
+        file
+      );
 
-      return Api.request(`${base}/${kind}`, {
-        method: 'POST',
-        body: form
-      });
+      return Api.request(
+        `${base}/${kind}`,
+        {
+          method: 'POST',
+          body: form
+        }
+      );
     }
   };
 
@@ -989,26 +1314,48 @@ function rolePage(role) {
     },
 
     get(id) {
-      return Api.get(`/products/${id}`);
+      return Api.get(
+        `/products/${id}`
+      );
     },
 
     create(data) {
-      return Api.post('/products', data);
+      return Api.post(
+        '/products',
+        data
+      );
     },
 
     update(id, data) {
-      return Api.put(`/products/${id}`, data);
+      return Api.put(
+        `/products/${id}`,
+        data
+      );
     },
 
     remove(id) {
-      return Api.delete(`/products/${id}`);
+      return Api.delete(
+        `/products/${id}`
+      );
     },
 
-    uploadImage(productId, file, primary = true) {
-      const form = new FormData();
+    uploadImage(
+      productId,
+      file,
+      primary = true
+    ) {
+      const form =
+        new FormData();
 
-      form.append('file', file);
-      form.append('primary', String(primary));
+      form.append(
+        'file',
+        file
+      );
+
+      form.append(
+        'primary',
+        String(primary)
+      );
 
       return Api.request(
         `/products/${productId}/images`,
@@ -1019,7 +1366,10 @@ function rolePage(role) {
       );
     },
 
-    deleteImage(productId, imageId) {
+    deleteImage(
+      productId,
+      imageId
+    ) {
       return Api.delete(
         `/products/${productId}/images/${imageId}`
       );
@@ -1028,9 +1378,10 @@ function rolePage(role) {
 
   const ProviderOrders = {
     list(status = '') {
-      const suffix = status
-        ? `?status=${encodeURIComponent(status)}`
-        : '';
+      const suffix =
+        status
+          ? `?status=${encodeURIComponent(status)}`
+          : '';
 
       return Api.get(
         `/orders/provider/items${suffix}`
@@ -1068,7 +1419,9 @@ function rolePage(role) {
 
   const PickupAddress = {
     get() {
-      return Api.get('/provider/pickup-address');
+      return Api.get(
+        '/provider/pickup-address'
+      );
     },
 
     save(data) {
@@ -1087,7 +1440,9 @@ function rolePage(role) {
       );
     },
 
-    providerSummary(providerId) {
+    providerSummary(
+      providerId
+    ) {
       return Api.get(
         `/reviews/providers/${providerId}/summary`,
         false
@@ -1097,37 +1452,52 @@ function rolePage(role) {
 
   const AdminUsers = {
     list(filters = {}) {
-      const params = new URLSearchParams();
+      const params =
+        new URLSearchParams();
 
-      Object.entries(filters).forEach(
-        ([key, value]) => {
-          if (
-            value !== undefined &&
-            value !== null &&
-            value !== ''
-          ) {
-            params.set(key, value);
+      Object.entries(filters)
+        .forEach(
+          ([key, value]) => {
+            if (
+              value !== undefined &&
+              value !== null &&
+              value !== ''
+            ) {
+              params.set(
+                key,
+                value
+              );
+            }
           }
-        }
+        );
+
+      const suffix =
+        params.toString()
+          ? `?${params.toString()}`
+          : '';
+
+      return Api.get(
+        `/admin/users${suffix}`
       );
-
-      const suffix = params.toString()
-        ? `?${params.toString()}`
-        : '';
-
-      return Api.get(`/admin/users${suffix}`);
     },
 
     statistics() {
-      return Api.get('/admin/users/statistics');
+      return Api.get(
+        '/admin/users/statistics'
+      );
     },
 
-    updateStatus(id, status, reason = '') {
+    updateStatus(
+      id,
+      status,
+      reason = ''
+    ) {
       return Api.patch(
         `/admin/users/${id}/status`,
         {
           status,
-          reason: reason || null
+          reason:
+            reason || null
         }
       );
     }
@@ -1153,7 +1523,10 @@ function rolePage(role) {
       ).then(unwrap);
     },
 
-    reject(userId, reason) {
+    reject(
+      userId,
+      reason
+    ) {
       return Api.patch(
         `/admin/applications/${userId}/reject`,
         { reason }
@@ -1163,11 +1536,15 @@ function rolePage(role) {
 
   const AdminOrders = {
     list() {
-      return Api.get('/admin/orders');
+      return Api.get(
+        '/admin/orders'
+      );
     },
 
     get(id) {
-      return Api.get(`/admin/orders/${id}`);
+      return Api.get(
+        `/admin/orders/${id}`
+      );
     },
 
     markReceived(itemId) {
@@ -1180,9 +1557,10 @@ function rolePage(role) {
 
   const AdminPayments = {
     list(status = '') {
-      const suffix = status
-        ? `?status=${encodeURIComponent(status)}`
-        : '';
+      const suffix =
+        status
+          ? `?status=${encodeURIComponent(status)}`
+          : '';
 
       return Api.get(
         `/admin/payments${suffix}`
@@ -1203,22 +1581,6 @@ function rolePage(role) {
         `/admin/payments/${id}/reject`,
         { reason }
       );
-    },
-
-    async receipt(id) {
-      const response = await Api.request(
-        `/admin/payments/${id}/receipt`,
-        { raw: true }
-      );
-
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-
-      window.open(url, '_blank', 'noopener');
-
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
-      }, 60000);
     }
   };
 
@@ -1230,48 +1592,76 @@ function rolePage(role) {
         );
       }
 
-      let path = protectedUrl;
+      let path =
+        protectedUrl;
 
-      if (/^https?:\/\//i.test(path)) {
-        path = new URL(path).pathname;
+      if (
+        /^https?:\/\//i.test(path)
+      ) {
+        path =
+          new URL(path).pathname;
       }
 
-      if (path.startsWith('/api/')) {
-        path = path.slice(4);
+      if (
+        path.startsWith('/api/')
+      ) {
+        path =
+          path.slice(4);
       }
 
-      const response = await Api.request(path, {
-        raw: true
-      });
+      const response =
+        await Api.request(
+          path,
+          { raw: true }
+        );
 
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
+      const blob =
+        await response.blob();
 
-      window.open(url, '_blank', 'noopener');
+      const url =
+        URL.createObjectURL(blob);
+
+      window.open(
+        url,
+        '_blank',
+        'noopener'
+      );
 
       setTimeout(() => {
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(
+          url
+        );
       }, 60000);
     }
   };
 
   const Forms = {
-    togglePassword(inputId, button) {
+    togglePassword(
+      inputId,
+      button
+    ) {
       const input =
-        document.getElementById(inputId);
+        document.getElementById(
+          inputId
+        );
 
-      if (!input) return;
+      if (!input) {
+        return;
+      }
 
-      const showing = input.type === 'text';
+      const showing =
+        input.type === 'text';
 
-      input.type = showing
-        ? 'password'
-        : 'text';
+      input.type =
+        showing
+          ? 'password'
+          : 'text';
 
       if (button) {
-        button.innerHTML = `
-          <i class="bi bi-eye${showing ? '' : '-slash'}"></i>
-        `;
+        button.innerHTML =
+          showing
+            ? '<i class="bi bi-eye"></i>'
+            : '<i class="bi bi-eye-slash"></i>';
 
         button.setAttribute(
           'aria-label',
@@ -1282,26 +1672,36 @@ function rolePage(role) {
       }
     },
 
-    bindGuards(root = document) {
+    bindGuards(
+      root = document
+    ) {
       root
-        .querySelectorAll('[data-letters-only]')
+        .querySelectorAll(
+          '[data-letters-only]'
+        )
         .forEach(input => {
           const allowAmpersand =
-            input.dataset.allowAmpersand === 'true';
+            input.dataset
+              .allowAmpersand ===
+            'true';
 
-          const pattern = allowAmpersand
-            ? /^[A-Za-z][A-Za-z .&'\-]*$/
-            : /^[A-Za-z][A-Za-z .'\-]*$/;
+          const pattern =
+            allowAmpersand
+              ? /^[A-Za-z][A-Za-z .&'\-]*$/
+              : /^[A-Za-z][A-Za-z .'\-]*$/;
 
           const message =
-            input.dataset.validationMessage ||
+            input.dataset
+              .validationMessage ||
             'Use letters and spaces only.';
 
           const validate = () => {
-            const value = input.value.trim();
+            const value =
+              input.value.trim();
 
             input.setCustomValidity(
-              !value || pattern.test(value)
+              !value ||
+              pattern.test(value)
                 ? ''
                 : message
             );
@@ -1319,17 +1719,22 @@ function rolePage(role) {
         });
 
       root
-        .querySelectorAll('[data-numbers-only]')
+        .querySelectorAll(
+          '[data-numbers-only]'
+        )
         .forEach(input => {
           const message =
-            input.dataset.validationMessage ||
+            input.dataset
+              .validationMessage ||
             'Use numbers only.';
 
           const validate = () => {
-            const value = input.value.trim();
+            const value =
+              input.value.trim();
 
             input.setCustomValidity(
-              !value || /^[0-9]+$/.test(value)
+              !value ||
+              /^[0-9]+$/.test(value)
                 ? ''
                 : message
             );
@@ -1349,46 +1754,39 @@ function rolePage(role) {
   };
 
   const fmt = value =>
-    `₦${Number(value || 0).toLocaleString(
-      'en-NG',
-      {
-        maximumFractionDigits: 2
-      }
-    )}`;
-
-  const escapeHtml = value =>
-    String(value ?? '').replace(
-      /[&<>'"]/g,
-      character =>
-        ({
-          '&': '&amp;',
-          '<': '&lt;',
-          '>': '&gt;',
-          "'": '&#39;',
-          '"': '&quot;'
-        })[character]
-    );
+    `₦${Number(value || 0)
+      .toLocaleString(
+        'en-NG',
+        {
+          maximumFractionDigits: 2
+        }
+      )}`;
 
   const date = value =>
     value
-      ? new Date(value).toLocaleString()
+      ? new Date(value)
+          .toLocaleString()
       : '—';
 
-  function productCard(product) {
-    const item = normalizeProduct(product);
+  function productCard(
+    product
+  ) {
+    const item =
+      normalizeProduct(product);
 
     const disabled =
       !item.variantId ||
       !item.variant?.available ||
       Number(
-        item.variant?.stockQuantity || 0
+        item.variant
+          ?.stockQuantity || 0
       ) <= 0;
 
     return `
       <div class="col-sm-6 col-lg-3 mb-4">
         <div class="product-card h-100">
           <a
-            href="product.html?id=${item.id}"
+            href="/product.html?id=${item.id}"
             class="product-img"
           >
             <img
@@ -1403,7 +1801,8 @@ function rolePage(role) {
               <span class="badge-soft">
                 ${escapeHtml(
                   item.category ||
-                  item.productType
+                  item.productType ||
+                  'Product'
                 )}
               </span>
 
@@ -1413,8 +1812,8 @@ function rolePage(role) {
             </div>
 
             <a
+              href="/product.html?id=${item.id}"
               class="text-decoration-none text-dark"
-              href="product.html?id=${item.id}"
             >
               <h6 class="mt-2 mb-1">
                 ${escapeHtml(item.name)}
@@ -1423,6 +1822,7 @@ function rolePage(role) {
 
             <div class="text-muted small mb-2">
               ${escapeHtml(item.ownerName || '')}
+
               ${
                 item.location
                   ? ` · ${escapeHtml(item.location)}`
@@ -1443,17 +1843,19 @@ function rolePage(role) {
 
               <div class="d-flex gap-1">
                 <button
+                  type="button"
                   class="btn btn-sm btn-outline-brand"
                   data-saved="false"
-                  onclick="event.preventDefault(); Oyuki.Wishlist.toggle(${item.id}, this)"
+                  onclick="event.preventDefault(); window.Oyuki.Wishlist.toggle(${item.id}, this)"
                 >
                   <i class="bi bi-heart"></i>
                 </button>
 
                 <button
+                  type="button"
                   class="btn btn-sm btn-brand"
                   ${disabled ? 'disabled' : ''}
-                  onclick="event.preventDefault(); Oyuki.addToCart(${item.variantId}, 1)"
+                  onclick="event.preventDefault(); window.Oyuki.addToCart(${item.variantId}, 1)"
                 >
                   <i class="bi bi-basket2"></i>
                 </button>
@@ -1465,27 +1867,38 @@ function rolePage(role) {
     `;
   }
 
-  function kitchenCard(kitchen) {
+  function kitchenCard(
+    kitchen
+  ) {
     return `
       <div class="col-md-4 mb-4">
         <div class="kitchen-card h-100">
           <img
             src="${escapeHtml(
-              kitchen.image || FALLBACK_IMAGE
+              kitchen.image ||
+              FALLBACK_IMAGE
             )}"
-            alt="${escapeHtml(kitchen.name)}"
+            alt="${escapeHtml(
+              kitchen.name ||
+              'Kitchen'
+            )}"
             onerror="this.src='${FALLBACK_IMAGE}'"
           >
 
           <div class="p-3">
-            <h5>${escapeHtml(kitchen.name)}</h5>
+            <h5>
+              ${escapeHtml(
+                kitchen.name ||
+                'Kitchen'
+              )}
+            </h5>
 
             <p class="text-muted small mb-2">
               Kitchen products on Oyuki
             </p>
 
             <a
-              href="kitchen-detail.html?id=${kitchen.id}"
+              href="/kitchen-detail.html?id=${kitchen.id}"
               class="btn btn-outline-brand btn-sm"
             >
               View meals
@@ -1496,27 +1909,44 @@ function rolePage(role) {
     `;
   }
 
-  function kitchensFromProducts(products) {
-    const map = new Map();
+  function kitchensFromProducts(
+    products
+  ) {
+    const map =
+      new Map();
 
     products
       .filter(
         product =>
           String(
-            product.ownerRole
-          ).toUpperCase() === 'KITCHEN'
+            product.ownerRole ||
+            ''
+          ).toUpperCase() ===
+          'KITCHEN'
       )
       .forEach(product => {
-        if (!map.has(product.ownerId)) {
-          map.set(product.ownerId, {
-            id: product.ownerId,
-            name: product.ownerName,
-            image: product.image
-          });
+        if (
+          !map.has(
+            product.ownerId
+          )
+        ) {
+          map.set(
+            product.ownerId,
+            {
+              id:
+                product.ownerId,
+              name:
+                product.ownerName,
+              image:
+                product.image
+            }
+          );
         }
       });
 
-    return [...map.values()];
+    return [
+      ...map.values()
+    ];
   }
 
   async function addToCart(
@@ -1529,303 +1959,377 @@ function rolePage(role) {
         quantity
       );
     } catch (error) {
-      Toast.show(error.message, 'error');
+      Toast.show(
+        error.message,
+        'error'
+      );
+
       return null;
     }
   }
 
   function enforceAdminSubdomain() {
-    if (!IS_ADMIN_SUBDOMAIN) return;
+    if (!IS_ADMIN_SUBDOMAIN) {
+      return;
+    }
 
     const currentPage =
-      location.pathname
+      window.location.pathname
         .split('/')
         .pop()
         .toLowerCase();
 
-    const publicPages = new Set([
-      '',
-      'index.html',
-      'home.html',
-      'login.html',
-      'register.html'
-    ]);
+    const publicPages =
+      new Set([
+        '',
+        'index.html',
+        'home.html',
+        'login.html',
+        'register.html'
+      ]);
 
-    if (publicPages.has(currentPage)) {
-      const user = Auth.current();
+    if (
+      publicPages.has(
+        currentPage
+      )
+    ) {
+      const user =
+        Auth.current();
 
       if (
         user &&
         Auth.token() &&
-        String(user.role).toUpperCase() === 'ADMIN'
+        String(user.role)
+          .toUpperCase() ===
+          'ADMIN'
       ) {
-        location.replace('admin.html');
+        window.location.replace(
+          '/admin.html'
+        );
       } else {
-        location.replace('admin-login.html');
+        window.location.replace(
+          '/admin-login.html'
+        );
       }
     }
   }
 
- function renderNav() {
-  const holder =
-    document.getElementById('oy-navbar');
+  function renderNav() {
+    const holder =
+      document.getElementById(
+        'oy-navbar'
+      );
 
-  if (!holder) {
-    return;
-  }
+    if (!holder) {
+      return;
+    }
 
-  const user = Auth.current();
+    const user =
+      Auth.current();
 
-  const account = user
-    ? `
-      <div class="dropdown">
-        <button
-          class="btn btn-ghost dropdown-toggle"
-          type="button"
-          data-bs-toggle="dropdown"
-          aria-expanded="false"
+    const account = user
+      ? `
+        <div class="dropdown">
+          <button
+            class="btn btn-ghost dropdown-toggle"
+            type="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            <i class="bi bi-person-circle"></i>
+
+            ${escapeHtml(
+              (
+                user.fullName ||
+                'Account'
+              ).split(' ')[0]
+            )}
+          </button>
+
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <a
+                class="dropdown-item"
+                href="${rolePage(user.role)}"
+              >
+                Dashboard
+              </a>
+            </li>
+
+            <li>
+              <a
+                class="dropdown-item"
+                href="/feature-center.html"
+              >
+                Feature Centre
+              </a>
+            </li>
+
+            ${
+              Auth.isCustomer()
+                ? `
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      href="/cart.html"
+                    >
+                      Cart
+                    </a>
+                  </li>
+                `
+                : ''
+            }
+
+            <li>
+              <hr class="dropdown-divider">
+            </li>
+
+            <li>
+              <a
+                class="dropdown-item"
+                href="#"
+                onclick="window.Oyuki.Auth.logout(); return false;"
+              >
+                Log out
+              </a>
+            </li>
+          </ul>
+        </div>
+      `
+      : `
+        <a
+          href="/login.html"
+          class="btn btn-ghost"
         >
-          <i class="bi bi-person-circle"></i>
-
-          ${escapeHtml(
-            (user.fullName || 'Account')
-              .split(' ')[0]
-          )}
-        </button>
-
-        <ul class="dropdown-menu dropdown-menu-end">
-          <li>
-            <a
-              class="dropdown-item"
-              href="${rolePage(user.role)}"
-            >
-              Dashboard
-            </a>
-          </li>
-
-          <li>
-            <a
-              class="dropdown-item"
-              href="/feature-center.html"
-            >
-              Feature Centre
-            </a>
-          </li>
-
-          ${
-            Auth.isCustomer()
-              ? `
-                <li>
-                  <a
-                    class="dropdown-item"
-                    href="/cart.html"
-                  >
-                    Cart
-                  </a>
-                </li>
-              `
-              : ''
-          }
-
-          <li>
-            <hr class="dropdown-divider">
-          </li>
-
-          <li>
-            <a
-              class="dropdown-item"
-              href="#"
-              onclick="window.Oyuki.Auth.logout(); return false;"
-            >
-              Log out
-            </a>
-          </li>
-        </ul>
-      </div>
-    `
-    : `
-      <a
-        href="/login.html"
-        class="btn btn-ghost"
-      >
-        Log in
-      </a>
-
-      <a
-        href="/register.html"
-        class="btn btn-brand ms-2"
-      >
-        Sign up
-      </a>
-    `;
-
-  holder.innerHTML = `
-    <nav class="oy-nav">
-      <div
-        class="container d-flex align-items-center justify-content-between"
-      >
-        <a href="/home.html" class="brand">
-          <span class="dot"></span>
-          Oyuki
+          Log in
         </a>
 
-        <button
-          class="btn btn-ghost d-lg-none"
-          type="button"
-          data-bs-toggle="offcanvas"
-          data-bs-target="#oyMenu"
-          aria-controls="oyMenu"
-          aria-label="Open navigation"
+        <a
+          href="/register.html"
+          class="btn btn-brand ms-2"
         >
-          <i class="bi bi-list"></i>
-        </button>
+          Sign up
+        </a>
+      `;
 
-        <div
-          class="d-none d-lg-flex align-items-center gap-1"
-        >
-          <a class="nav-link" href="/home.html">
+    holder.innerHTML = `
+      <nav class="oy-nav">
+        <div class="container d-flex align-items-center justify-content-between">
+
+          <a
+            href="/home.html"
+            class="brand"
+          >
+            <span class="dot"></span>
+            Oyuki
+          </a>
+
+          <button
+            class="btn btn-ghost d-lg-none"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#oyMenu"
+            aria-controls="oyMenu"
+            aria-label="Open navigation"
+          >
+            <i class="bi bi-list"></i>
+          </button>
+
+          <div class="d-none d-lg-flex align-items-center gap-1">
+            <a
+              class="nav-link"
+              href="/home.html"
+            >
+              Home
+            </a>
+
+            <a
+              class="nav-link"
+              href="/shop.html"
+            >
+              Marketplace
+            </a>
+
+            <a
+              class="nav-link"
+              href="/meals.html"
+            >
+              Ready Meals
+            </a>
+
+            <a
+              class="nav-link"
+              href="/kitchens.html"
+            >
+              Kitchens
+            </a>
+
+            <a
+              class="nav-link"
+              href="/about.html"
+            >
+              About
+            </a>
+
+            <a
+              class="nav-link"
+              href="/contact.html"
+            >
+              Contact
+            </a>
+          </div>
+
+          <div class="d-none d-lg-flex align-items-center">
+            ${
+              Auth.isCustomer()
+                ? `
+                  <a
+                    href="/cart.html"
+                    class="btn btn-ghost me-2"
+                  >
+                    <i class="bi bi-basket2"></i>
+
+                    <span
+                      id="cart-badge"
+                      class="cart-badge"
+                      style="display:none"
+                    >
+                      0
+                    </span>
+                  </a>
+                `
+                : ''
+            }
+
+            ${account}
+          </div>
+        </div>
+      </nav>
+
+      <div
+        class="offcanvas offcanvas-end"
+        tabindex="-1"
+        id="oyMenu"
+        aria-labelledby="oyMenuLabel"
+      >
+        <div class="offcanvas-header">
+          <a
+            id="oyMenuLabel"
+            href="/home.html"
+            class="brand"
+          >
+            <span class="dot"></span>
+            Oyuki
+          </a>
+
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="offcanvas"
+            aria-label="Close"
+          ></button>
+        </div>
+
+        <div class="offcanvas-body d-flex flex-column gap-2">
+          <a
+            class="nav-link"
+            href="/home.html"
+          >
             Home
           </a>
 
-          <a class="nav-link" href="/shop.html">
+          <a
+            class="nav-link"
+            href="/shop.html"
+          >
             Marketplace
           </a>
 
-          <a class="nav-link" href="/meals.html">
+          <a
+            class="nav-link"
+            href="/meals.html"
+          >
             Ready Meals
           </a>
 
-          <a class="nav-link" href="/kitchens.html">
+          <a
+            class="nav-link"
+            href="/kitchens.html"
+          >
             Kitchens
           </a>
 
-          <a class="nav-link" href="/about.html">
+          <a
+            class="nav-link"
+            href="/about.html"
+          >
             About
           </a>
 
-          <a class="nav-link" href="/contact.html">
+          <a
+            class="nav-link"
+            href="/contact.html"
+          >
             Contact
           </a>
-        </div>
 
-        <div
-          class="d-none d-lg-flex align-items-center"
-        >
-          ${
-            Auth.isCustomer()
-              ? `
-                <a
-                  href="/cart.html"
-                  class="btn btn-ghost me-2"
-                >
-                  <i class="bi bi-basket2"></i>
-
-                  <span
-                    id="cart-badge"
-                    class="cart-badge"
-                    style="display:none"
-                  >
-                    0
-                  </span>
-                </a>
-              `
-              : ''
-          }
+          <hr>
 
           ${account}
         </div>
       </div>
-    </nav>
+    `;
 
-    <div
-      class="offcanvas offcanvas-end"
-      tabindex="-1"
-      id="oyMenu"
-      aria-labelledby="oyMenuLabel"
-    >
-      <div class="offcanvas-header">
-        <a
-          id="oyMenuLabel"
-          href="/home.html"
-          class="brand"
-        >
-          <span class="dot"></span>
-          Oyuki
-        </a>
+    const currentPage =
+      window.location.pathname
+        .split('/')
+        .pop() ||
+      'home.html';
 
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="offcanvas"
-          aria-label="Close"
-        ></button>
-      </div>
+    holder
+      .querySelectorAll(
+        '.nav-link'
+      )
+      .forEach(link => {
+        const href =
+          link.getAttribute(
+            'href'
+          ) || '';
 
-      <div
-        class="offcanvas-body d-flex flex-column gap-2"
-      >
-        <a class="nav-link" href="/home.html">
-          Home
-        </a>
+        const linkPage =
+          href
+            .split('/')
+            .pop();
 
-        <a class="nav-link" href="/shop.html">
-          Marketplace
-        </a>
+        if (
+          linkPage ===
+          currentPage
+        ) {
+          link.classList.add(
+            'active'
+          );
+        }
+      });
+  }
 
-        <a class="nav-link" href="/meals.html">
-          Ready Meals
-        </a>
-
-        <a class="nav-link" href="/kitchens.html">
-          Kitchens
-        </a>
-
-        <a class="nav-link" href="/about.html">
-          About
-        </a>
-
-        <a class="nav-link" href="/contact.html">
-          Contact
-        </a>
-
-        <hr>
-
-        ${account}
-      </div>
-    </div>
-  `;
-
-  const currentPage =
-    window.location.pathname
-      .split('/')
-      .pop() || 'home.html';
-
-  holder
-    .querySelectorAll('.nav-link')
-    .forEach(link => {
-      const href =
-        link.getAttribute('href') || '';
-
-      const linkPage =
-        href.split('/').pop();
-
-      if (linkPage === currentPage) {
-        link.classList.add('active');
-      }
-    });
-}
   function renderFooter() {
     const holder =
-      document.getElementById('oy-footer');
+      document.getElementById(
+        'oy-footer'
+      );
 
-    if (!holder) return;
+    if (!holder) {
+      return;
+    }
 
     holder.innerHTML = `
       <footer class="oy-footer">
+
         <div class="footer-shape footer-shape-one"></div>
         <div class="footer-shape footer-shape-two"></div>
 
         <div class="container position-relative">
+
           <div class="footer-cta">
             <div>
               <span class="footer-eyebrow">
@@ -1838,13 +2342,13 @@ function rolePage(role) {
               </h2>
 
               <p>
-                Discover farmers, food sellers and
-                kitchens serving customers across Nigeria.
+                Discover farmers, food sellers and kitchens
+                serving customers across Nigeria.
               </p>
             </div>
 
             <a
-              href="shop.html"
+              href="/shop.html"
               class="btn footer-cta-btn"
             >
               Shop now
@@ -1853,9 +2357,10 @@ function rolePage(role) {
           </div>
 
           <div class="row g-5 footer-main">
+
             <div class="col-lg-4 col-md-6">
               <a
-                href="home.html"
+                href="/home.html"
                 class="footer-brand"
               >
                 <span class="footer-brand-icon">
@@ -1866,50 +2371,34 @@ function rolePage(role) {
               </a>
 
               <p class="footer-description">
-                Fresh farm produce, ready meals and
-                trusted kitchens delivered conveniently
-                across Nigeria.
+                Fresh farm produce, ready meals and trusted
+                kitchens delivered conveniently across Nigeria.
               </p>
 
               <div class="footer-socials">
                 <a
-                  href="https://www.instagram.com/YOUR_INSTAGRAM_USERNAME"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="#"
                   aria-label="Instagram"
                 >
                   <i class="bi bi-instagram"></i>
                 </a>
 
                 <a
-                  href="https://www.facebook.com/YOUR_FACEBOOK_USERNAME"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="#"
                   aria-label="Facebook"
                 >
                   <i class="bi bi-facebook"></i>
                 </a>
 
                 <a
-                  href="https://www.tiktok.com/@YOUR_TIKTOK_USERNAME"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="#"
                   aria-label="TikTok"
                 >
                   <i class="bi bi-tiktok"></i>
                 </a>
 
                 <a
-                  href="https://www.youtube.com/@YOUR_YOUTUBE_USERNAME"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="YouTube"
-                >
-                  <i class="bi bi-youtube"></i>
-                </a>
-
-                <a
-                  href="https://wa.me/2347013403517?text=Hello%20Oyuki%2C%20I%20would%20like%20to%20make%20an%20enquiry."
+                  href="https://wa.me/2347013403517"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="WhatsApp"
@@ -1925,23 +2414,23 @@ function rolePage(role) {
               </h6>
 
               <div class="footer-links">
-                <a href="shop.html">
+                <a href="/shop.html">
                   Marketplace
                 </a>
 
-                <a href="meals.html">
+                <a href="/meals.html">
                   Ready Meals
                 </a>
 
-                <a href="kitchens.html">
+                <a href="/kitchens.html">
                   Kitchens
                 </a>
 
-                <a href="home.html#freshFromFarm">
+                <a href="/home.html#freshFromFarm">
                   Farm Produce
                 </a>
 
-                <a href="contact.html#complaint">
+                <a href="/contact.html">
                   Complaints
                 </a>
               </div>
@@ -1953,23 +2442,23 @@ function rolePage(role) {
               </h6>
 
               <div class="footer-links">
-                <a href="about.html">
+                <a href="/about.html">
                   About Oyuki
                 </a>
 
-                <a href="contact.html">
+                <a href="/contact.html">
                   Contact
                 </a>
 
-                <a href="feature-center.html">
+                <a href="/feature-center.html">
                   Export Requests
                 </a>
 
-                <a href="login.html">
+                <a href="/login.html">
                   Login
                 </a>
 
-                <a href="register.html">
+                <a href="/register.html">
                   Create Account
                 </a>
               </div>
@@ -1977,11 +2466,14 @@ function rolePage(role) {
 
             <div class="col-lg-4 col-md-6">
               <div class="footer-newsletter-card">
+
                 <div class="footer-newsletter-icon">
                   <i class="bi bi-envelope-paper-heart"></i>
                 </div>
 
-                <h6>Join our newsletter</h6>
+                <h6>
+                  Join our newsletter
+                </h6>
 
                 <p>
                   Get product updates, special offers and
@@ -2037,11 +2529,11 @@ function rolePage(role) {
             </span>
 
             <div class="footer-bottom-links">
-              <a href="privacy.html">
+              <a href="/privacy.html">
                 Privacy
               </a>
 
-              <a href="terms.html">
+              <a href="/terms.html">
                 Terms
               </a>
 
@@ -2061,7 +2553,9 @@ function rolePage(role) {
         'newsletterForm'
       );
 
-    if (!form) return;
+    if (!form) {
+      return;
+    }
 
     form.addEventListener(
       'submit',
@@ -2108,21 +2602,25 @@ function rolePage(role) {
         `;
 
         message.textContent = '';
+
         message.className =
           'footer-newsletter-message';
 
         try {
-          const result = await Api.post(
-            '/newsletter/subscribe',
-            { email },
-            false
-          );
+          const result =
+            await Api.post(
+              '/newsletter/subscribe',
+              { email },
+              false
+            );
 
           message.textContent =
             result?.message ||
             'Subscribed successfully. Welcome to Oyuki!';
 
-          message.classList.add('success');
+          message.classList.add(
+            'success'
+          );
 
           form.reset();
 
@@ -2132,10 +2630,12 @@ function rolePage(role) {
           );
         } catch (error) {
           message.textContent =
-            error?.message ||
+            error.message ||
             'Unable to subscribe. Please try again.';
 
-          message.classList.add('error');
+          message.classList.add(
+            'error'
+          );
 
           Toast.show(
             message.textContent,
@@ -2143,18 +2643,20 @@ function rolePage(role) {
           );
         } finally {
           button.disabled = false;
-          button.innerHTML = originalButton;
+          button.innerHTML =
+            originalButton;
         }
       }
     );
   }
 
-window.Oyuki = {
-  WEBSITE_ORIGIN,
-  API_ORIGIN,
+  window.Oyuki = {
+    WEBSITE_ORIGIN,
+    API_ORIGIN,
     API_BASE_URL,
     ADMIN_HOST,
     IS_ADMIN_SUBDOMAIN,
+
     Api,
     Auth,
     Products,
@@ -2180,6 +2682,7 @@ window.Oyuki = {
     AdminOrders,
     AdminPayments,
     AdminFiles,
+
     fmt,
     date,
     imageUrl,
@@ -2195,21 +2698,35 @@ window.Oyuki = {
     load,
     save,
 
-    // Legacy synchronous fallbacks.
     products: () => [],
     meals: () => [],
     kitchens: () => []
   };
 
-  document.addEventListener(
-    'DOMContentLoaded',
-    () => {
+  function initialisePage() {
+    try {
       enforceAdminSubdomain();
-
       renderNav();
       renderFooter();
       Forms.bindGuards();
       Cart.updateBadge();
+    } catch (error) {
+      console.error(
+        'Oyuki page initialisation failed:',
+        error
+      );
     }
-  );
+  }
+
+  if (
+    document.readyState ===
+    'loading'
+  ) {
+    document.addEventListener(
+      'DOMContentLoaded',
+      initialisePage
+    );
+  } else {
+    initialisePage();
+  }
 })();
