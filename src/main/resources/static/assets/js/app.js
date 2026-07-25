@@ -1,15 +1,26 @@
 /* Oyuki HTML frontend — Spring Boot API connected */
+
 (function () {
   'use strict';
 
-  const API_ORIGIN = window.location.origin;
-const API_BASE_URL =
-  "https://illustrious-nurturing-production-8169.up.railway.app/api";
-  const ADMIN_HOST = 'admin.oyukimarketplace.com';
-  const IS_ADMIN_SUBDOMAIN =
-    window.location.hostname.toLowerCase() === ADMIN_HOST;
+  const WEBSITE_ORIGIN =
+    'https://oyukimarketplace.com';
 
-  const FALLBACK_IMAGE = 'assets/images/hero.jpg';
+  const API_ORIGIN =
+    'https://illustrious-nurturing-production-8169.up.railway.app';
+
+  const API_BASE_URL =
+    'https://illustrious-nurturing-production-8169.up.railway.app/api';
+
+  const ADMIN_HOST =
+    'admin.oyukimarketplace.com';
+
+  const IS_ADMIN_SUBDOMAIN =
+    window.location.hostname.toLowerCase() ===
+    ADMIN_HOST;
+
+  const FALLBACK_IMAGE =
+    'assets/images/hero.jpg';
 
   const STORAGE = {
     token: 'oyuki_token',
@@ -209,42 +220,46 @@ const API_BASE_URL =
       : payload;
   }
 
-  function rolePage(role) {
-    const value = String(role || '').toUpperCase();
+function rolePage(role) {
+  const value =
+    String(role || '').toUpperCase();
 
-    if (value === 'CUSTOMER') {
-      return 'customer.html';
-    }
-
-    if (value === 'SELLER' || value === 'FARMER') {
-      return 'seller.html';
-    }
-
-    if (value === 'KITCHEN') {
-      return 'kitchen.html';
-    }
-
-    if (value === 'ADMIN') {
-      return 'admin.html';
-    }
-
-    if (
-      value === 'LOGISTICS_ADMIN' ||
-      value === 'LOGISTIC_ADMIN'
-    ) {
-      return 'logistics-admin.html';
-    }
-
-    if (value === 'ACCOUNT_OFFICER') {
-      return 'account-officer.html';
-    }
-
-    if (value === 'RIDER') {
-      return 'tracking.html';
-    }
-
-    return 'home.html';
+  if (value === 'CUSTOMER') {
+    return `${WEBSITE_ORIGIN}/customer.html`;
   }
+
+  if (
+    value === 'SELLER' ||
+    value === 'FARMER'
+  ) {
+    return `${WEBSITE_ORIGIN}/seller.html`;
+  }
+
+  if (value === 'KITCHEN') {
+    return `${WEBSITE_ORIGIN}/kitchen.html`;
+  }
+
+  if (value === 'ADMIN') {
+    return `${WEBSITE_ORIGIN}/admin.html`;
+  }
+
+  if (
+    value === 'LOGISTICS_ADMIN' ||
+    value === 'LOGISTIC_ADMIN'
+  ) {
+    return `${WEBSITE_ORIGIN}/logistics-admin.html`;
+  }
+
+  if (value === 'ACCOUNT_OFFICER') {
+    return `${WEBSITE_ORIGIN}/account-officer.html`;
+  }
+
+  if (value === 'RIDER') {
+    return `${WEBSITE_ORIGIN}/tracking.html`;
+  }
+
+  return `${WEBSITE_ORIGIN}/home.html`;
+}
 
   const Auth = {
     current() {
@@ -1552,207 +1567,86 @@ const API_BASE_URL =
   }
 
   function renderNav() {
-    const holder =
-      document.getElementById('oy-navbar');
-
-    if (!holder) return;
-
-    const user = Auth.current();
-
-    const account = user
-      ? `
-        <div class="dropdown">
-          <button
-            class="btn btn-ghost dropdown-toggle"
-            data-bs-toggle="dropdown"
-          >
-            <i class="bi bi-person-circle"></i>
-            ${escapeHtml(
-              (user.fullName || 'Account')
-                .split(' ')[0]
-            )}
-          </button>
-
-          <ul class="dropdown-menu dropdown-menu-end">
-            <li>
-              <a
-                class="dropdown-item"
-                href="${rolePage(user.role)}"
-              >
-                Dashboard
-              </a>
-            </li>
-
-            <li>
-              <a
-                class="dropdown-item"
-                href="feature-center.html"
-              >
-                Feature Centre
-              </a>
-            </li>
-
-            ${
-              Auth.isCustomer()
-                ? `
-                  <li>
-                    <a
-                      class="dropdown-item"
-                      href="cart.html"
-                    >
-                      Cart
-                    </a>
-                  </li>
-                `
-                : ''
-            }
-
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-
-            <li>
-              <a
-                class="dropdown-item"
-                href="#"
-                onclick="Oyuki.Auth.logout(); return false;"
-              >
-                Log out
-              </a>
-            </li>
-          </ul>
-        </div>
-      `
-      : `
-        <a href="login.html" class="btn btn-ghost">
-          Log in
-        </a>
-
-        <a
-          href="register.html"
-          class="btn btn-brand ms-2"
-        >
-          Sign up
-        </a>
-      `;
-
-    holder.innerHTML = `
-      <nav class="oy-nav">
-        <div class="container d-flex align-items-center justify-content-between">
-          <a href="home.html" class="brand">
-            <span class="dot"></span>
-            Oyuki
-          </a>
-
-          <button
-            class="btn btn-ghost d-lg-none"
-            type="button"
-            data-bs-toggle="offcanvas"
-            data-bs-target="#oyMenu"
-          >
-            <i class="bi bi-list"></i>
-          </button>
-
-          <div class="d-none d-lg-flex align-items-center gap-1">
-            <a class="nav-link" href="home.html">
-              Home
-            </a>
-
-            <a class="nav-link" href="shop.html">
-              Marketplace
-            </a>
-
-            <a class="nav-link" href="meals.html">
-              Ready Meals
-            </a>
-
-            <a class="nav-link" href="kitchens.html">
-              Kitchens
-            </a>
-
-            <a class="nav-link" href="about.html">
-              About
-            </a>
-
-            <a class="nav-link" href="contact.html">
-              Contact
-            </a>
-          </div>
-
-          <div class="d-none d-lg-flex align-items-center">
-            ${
-              Auth.isCustomer()
-                ? `
-                  <a
-                    href="cart.html"
-                    class="btn btn-ghost me-2"
-                  >
-                    <i class="bi bi-basket2"></i>
-
-                    <span
-                      id="cart-badge"
-                      class="cart-badge"
-                      style="display:none"
-                    >
-                      0
-                    </span>
-                  </a>
-                `
-                : ''
-            }
-
-            ${account}
-          </div>
-        </div>
-      </nav>
-
-      <div
-        class="offcanvas offcanvas-end"
-        id="oyMenu"
+   const account = user
+  ? `
+    <div class="dropdown">
+      <button
+        class="btn btn-ghost dropdown-toggle"
+        data-bs-toggle="dropdown"
       >
-        <div class="offcanvas-header">
-          <a href="home.html" class="brand">
-            <span class="dot"></span>
-            Oyuki
+        <i class="bi bi-person-circle"></i>
+
+        ${escapeHtml(
+          (user.fullName || 'Account')
+            .split(' ')[0]
+        )}
+      </button>
+
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li>
+          <a
+            class="dropdown-item"
+            href="${rolePage(user.role)}"
+          >
+            Dashboard
           </a>
+        </li>
 
-          <button
-            class="btn-close"
-            data-bs-dismiss="offcanvas"
-          ></button>
-        </div>
-
-        <div class="offcanvas-body d-flex flex-column gap-2">
-          <a class="nav-link" href="home.html">
-            Home
+        <li>
+          <a
+            class="dropdown-item"
+            href="feature-center.html"
+          >
+            Feature Centre
           </a>
+        </li>
 
-          <a class="nav-link" href="shop.html">
-            Marketplace
+        ${
+          Auth.isCustomer()
+            ? `
+              <li>
+                <a
+                  class="dropdown-item"
+                  href="cart.html"
+                >
+                  Cart
+                </a>
+              </li>
+            `
+            : ''
+        }
+
+        <li>
+          <hr class="dropdown-divider">
+        </li>
+
+        <li>
+          <a
+            class="dropdown-item"
+            href="#"
+            onclick="Oyuki.Auth.logout(); return false;"
+          >
+            Log out
           </a>
+        </li>
+      </ul>
+    </div>
+  `
+  : `
+    <a
+      href="login.html"
+      class="btn btn-ghost"
+    >
+      Log in
+    </a>
 
-          <a class="nav-link" href="meals.html">
-            Ready Meals
-          </a>
-
-          <a class="nav-link" href="kitchens.html">
-            Kitchens
-          </a>
-
-          <a class="nav-link" href="about.html">
-            About
-          </a>
-
-          <a class="nav-link" href="contact.html">
-            Contact
-          </a>
-
-          <hr>
-
-          ${account}
-        </div>
-      </div>
-    `;
+    <a
+      href="register.html"
+      class="btn btn-brand ms-2"
+    >
+      Sign up
+    </a>
+  `;
 
     const current =
       location.pathname.split('/').pop();
@@ -2103,8 +1997,9 @@ const API_BASE_URL =
     );
   }
 
-  window.Oyuki = {
-    API_ORIGIN,
+window.Oyuki = {
+  WEBSITE_ORIGIN,
+  API_ORIGIN,
     API_BASE_URL,
     ADMIN_HOST,
     IS_ADMIN_SUBDOMAIN,
