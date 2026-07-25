@@ -3,7 +3,8 @@
   'use strict';
 
   const API_ORIGIN = window.location.origin;
-  const API_BASE_URL = "https://api.oyukimarketplace.com/api";
+const API_BASE_URL =
+  "https://illustrious-nurturing-production-8169.up.railway.app/api";
   const ADMIN_HOST = 'admin.oyukimarketplace.com';
   const IS_ADMIN_SUBDOMAIN =
     window.location.hostname.toLowerCase() === ADMIN_HOST;
