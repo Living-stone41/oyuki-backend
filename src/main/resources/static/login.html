@@ -1,4 +1,3 @@
-```html
 <!doctype html>
 <html lang="en">
 <head>
@@ -69,9 +68,12 @@
 
       <div class="oy-auth-box">
 
-        <div class="oy-wordmark">
+        <a
+          href="/home.html"
+          class="oy-wordmark text-decoration-none"
+        >
           Oyuki
-        </div>
+        </a>
 
         <h1>Welcome back!</h1>
 
@@ -84,6 +86,7 @@
           id="loginError"
           class="oy-inline-error"
           role="alert"
+          aria-live="polite"
         ></div>
 
         <form id="loginForm">
@@ -198,9 +201,194 @@
 
   </div>
 
-  <script src="/assets/js/app.js"></script>
-
   <script>
+    const API_BASE_URL =
+      'https://illustrious-nurturing-production-8169.up.railway.app/api';
+
+    const WEBSITE_ORIGIN =
+      'https://oyukimarketplace.com';
+
+    const STORAGE = {
+      token: 'oyuki_token',
+      user: 'oyuki_user'
+    };
+
+    function showToast(message, type = '') {
+      const toast = document.createElement('div');
+
+      toast.className =
+        `oy-toast ${type}`;
+
+      toast.textContent = message;
+
+      document.body.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.add('show');
+      });
+
+      setTimeout(() => {
+        toast.classList.remove('show');
+
+        setTimeout(() => {
+          toast.remove();
+        }, 250);
+      }, 3000);
+    }
+
+    function getErrorMessage(payload, fallback) {
+      if (!payload) {
+        return fallback;
+      }
+
+      if (typeof payload === 'string') {
+        return payload;
+      }
+
+      return (
+        payload.message ||
+        payload.rootMessage ||
+        payload.error ||
+        fallback
+      );
+    }
+
+    function unwrap(payload) {
+      if (
+        payload &&
+        Object.prototype.hasOwnProperty.call(
+          payload,
+          'data'
+        )
+      ) {
+        return payload.data;
+      }
+
+      return payload;
+    }
+
+    function rolePage(role) {
+      const value =
+        String(role || '').toUpperCase();
+
+      if (value === 'CUSTOMER') {
+        return `${WEBSITE_ORIGIN}/customer.html`;
+      }
+
+      if (
+        value === 'SELLER' ||
+        value === 'FARMER'
+      ) {
+        return `${WEBSITE_ORIGIN}/seller.html`;
+      }
+
+      if (value === 'KITCHEN') {
+        return `${WEBSITE_ORIGIN}/kitchen.html`;
+      }
+
+      if (value === 'ADMIN') {
+        return `${WEBSITE_ORIGIN}/admin.html`;
+      }
+
+      if (
+        value === 'LOGISTICS_ADMIN' ||
+        value === 'LOGISTIC_ADMIN'
+      ) {
+        return `${WEBSITE_ORIGIN}/logistics-admin.html`;
+      }
+
+      if (value === 'ACCOUNT_OFFICER') {
+        return `${WEBSITE_ORIGIN}/account-officer.html`;
+      }
+
+      if (value === 'RIDER') {
+        return `${WEBSITE_ORIGIN}/tracking.html`;
+      }
+
+      return `${WEBSITE_ORIGIN}/home.html`;
+    }
+
+    async function login(identifier, password) {
+      let response;
+
+      try {
+        response = await fetch(
+          `${API_BASE_URL}/auth/login`,
+          {
+            method: 'POST',
+
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json'
+            },
+
+            body: JSON.stringify({
+              identifier,
+              password
+            })
+          }
+        );
+      } catch (error) {
+        console.error(
+          'Login connection error:',
+          error
+        );
+
+        throw new Error(
+          'Cannot reach the Oyuki server. Check your internet connection and try again.'
+        );
+      }
+
+      const text = await response.text();
+
+      let payload = null;
+
+      if (text) {
+        try {
+          payload = JSON.parse(text);
+        } catch {
+          payload = text;
+        }
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          getErrorMessage(
+            payload,
+            `Login failed (${response.status})`
+          )
+        );
+      }
+
+      const result = unwrap(payload);
+
+      if (!result || !result.token) {
+        throw new Error(
+          'Login succeeded, but the server did not return an access token.'
+        );
+      }
+
+      const user = {
+        id: result.userId,
+        userId: result.userId,
+        fullName: result.fullName,
+        role: result.role,
+        status: result.status
+      };
+
+      localStorage.setItem(
+        STORAGE.token,
+        result.token
+      );
+
+      localStorage.setItem(
+        STORAGE.user,
+        JSON.stringify(user)
+      );
+
+      return user;
+    }
+
     document.addEventListener(
       'DOMContentLoaded',
       function () {
@@ -214,16 +402,24 @@
           document.getElementById('loginError');
 
         const passwordInput =
-          document.getElementById('loginPassword');
+          document.getElementById(
+            'loginPassword'
+          );
 
         const passwordToggle =
-          document.getElementById('passwordToggle');
+          document.getElementById(
+            'passwordToggle'
+          );
 
         const googleButton =
-          document.getElementById('googleLogin');
+          document.getElementById(
+            'googleLogin'
+          );
 
         const facebookButton =
-          document.getElementById('facebookLogin');
+          document.getElementById(
+            'facebookLogin'
+          );
 
         function showError(message) {
           errorBox.textContent = message;
@@ -235,43 +431,32 @@
           errorBox.classList.remove('show');
         }
 
-        function showSocialMessage() {
-          if (
-            window.Oyuki &&
-            Oyuki.Toast
-          ) {
-            Oyuki.Toast.show(
-              'Social login will be available after OAuth is configured.',
-              'error'
-            );
-
-            return;
-          }
-
-          alert(
-            'Social login will be available after OAuth is configured.'
+        function socialNotice() {
+          showToast(
+            'Social login will be available after OAuth is configured.',
+            'error'
           );
         }
 
         passwordToggle.addEventListener(
           'click',
           function () {
-            const showing =
+            const passwordIsVisible =
               passwordInput.type === 'text';
 
             passwordInput.type =
-              showing
+              passwordIsVisible
                 ? 'password'
                 : 'text';
 
             passwordToggle.innerHTML =
-              showing
+              passwordIsVisible
                 ? '<i class="bi bi-eye"></i>'
                 : '<i class="bi bi-eye-slash"></i>';
 
             passwordToggle.setAttribute(
               'aria-label',
-              showing
+              passwordIsVisible
                 ? 'Show password'
                 : 'Hide password'
             );
@@ -280,12 +465,12 @@
 
         googleButton.addEventListener(
           'click',
-          showSocialMessage
+          socialNotice
         );
 
         facebookButton.addEventListener(
           'click',
-          showSocialMessage
+          socialNotice
         );
 
         form.addEventListener(
@@ -295,22 +480,14 @@
 
             clearError();
 
-            if (
-              !window.Oyuki ||
-              !Oyuki.Auth
-            ) {
-              showError(
-                'The website JavaScript did not load. Please refresh the page and try again.'
-              );
-
-              return;
-            }
-
             const identifier =
-              form.identifier.value.trim();
+              document
+                .getElementById('identifier')
+                .value
+                .trim();
 
             const password =
-              form.password.value;
+              passwordInput.value;
 
             if (!identifier || !password) {
               showError(
@@ -326,12 +503,12 @@
 
             try {
               const user =
-                await Oyuki.Auth.login(
+                await login(
                   identifier,
                   password
                 );
 
-              Oyuki.Toast.show(
+              showToast(
                 `Welcome back, ${user.fullName || 'User'}!`,
                 'success'
               );
@@ -350,7 +527,7 @@
               const destination =
                 safeRedirect
                   ? redirect
-                  : Oyuki.rolePage(user.role);
+                  : rolePage(user.role);
 
               setTimeout(
                 function () {
@@ -363,7 +540,7 @@
             } catch (error) {
               showError(
                 error.message ||
-                'Unable to log in. Please check your details and try again.'
+                'Unable to log in. Check your details and try again.'
               );
 
             } finally {
@@ -379,4 +556,3 @@
 
 </body>
 </html>
-```

@@ -1566,102 +1566,254 @@ function rolePage(role) {
     }
   }
 
-  function renderNav() {
-   const account = user
-  ? `
-    <div class="dropdown">
-      <button
-        class="btn btn-ghost dropdown-toggle"
-        data-bs-toggle="dropdown"
-      >
-        <i class="bi bi-person-circle"></i>
+ function renderNav() {
+  const holder =
+    document.getElementById('oy-navbar');
 
-        ${escapeHtml(
-          (user.fullName || 'Account')
-            .split(' ')[0]
-        )}
-      </button>
-
-      <ul class="dropdown-menu dropdown-menu-end">
-        <li>
-          <a
-            class="dropdown-item"
-            href="${rolePage(user.role)}"
-          >
-            Dashboard
-          </a>
-        </li>
-
-        <li>
-          <a
-            class="dropdown-item"
-            href="feature-center.html"
-          >
-            Feature Centre
-          </a>
-        </li>
-
-        ${
-          Auth.isCustomer()
-            ? `
-              <li>
-                <a
-                  class="dropdown-item"
-                  href="cart.html"
-                >
-                  Cart
-                </a>
-              </li>
-            `
-            : ''
-        }
-
-        <li>
-          <hr class="dropdown-divider">
-        </li>
-
-        <li>
-          <a
-            class="dropdown-item"
-            href="#"
-            onclick="Oyuki.Auth.logout(); return false;"
-          >
-            Log out
-          </a>
-        </li>
-      </ul>
-    </div>
-  `
-  : `
-    <a
-      href="login.html"
-      class="btn btn-ghost"
-    >
-      Log in
-    </a>
-
-    <a
-      href="register.html"
-      class="btn btn-brand ms-2"
-    >
-      Sign up
-    </a>
-  `;
-
-    const current =
-      location.pathname.split('/').pop();
-
-    holder
-      .querySelectorAll('.nav-link')
-      .forEach(anchor => {
-        if (
-          anchor.getAttribute('href') === current
-        ) {
-          anchor.classList.add('active');
-        }
-      });
+  if (!holder) {
+    return;
   }
 
+  const user = Auth.current();
+
+  const account = user
+    ? `
+      <div class="dropdown">
+        <button
+          class="btn btn-ghost dropdown-toggle"
+          type="button"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+        >
+          <i class="bi bi-person-circle"></i>
+
+          ${escapeHtml(
+            (user.fullName || 'Account')
+              .split(' ')[0]
+          )}
+        </button>
+
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li>
+            <a
+              class="dropdown-item"
+              href="${rolePage(user.role)}"
+            >
+              Dashboard
+            </a>
+          </li>
+
+          <li>
+            <a
+              class="dropdown-item"
+              href="/feature-center.html"
+            >
+              Feature Centre
+            </a>
+          </li>
+
+          ${
+            Auth.isCustomer()
+              ? `
+                <li>
+                  <a
+                    class="dropdown-item"
+                    href="/cart.html"
+                  >
+                    Cart
+                  </a>
+                </li>
+              `
+              : ''
+          }
+
+          <li>
+            <hr class="dropdown-divider">
+          </li>
+
+          <li>
+            <a
+              class="dropdown-item"
+              href="#"
+              onclick="window.Oyuki.Auth.logout(); return false;"
+            >
+              Log out
+            </a>
+          </li>
+        </ul>
+      </div>
+    `
+    : `
+      <a
+        href="/login.html"
+        class="btn btn-ghost"
+      >
+        Log in
+      </a>
+
+      <a
+        href="/register.html"
+        class="btn btn-brand ms-2"
+      >
+        Sign up
+      </a>
+    `;
+
+  holder.innerHTML = `
+    <nav class="oy-nav">
+      <div
+        class="container d-flex align-items-center justify-content-between"
+      >
+        <a href="/home.html" class="brand">
+          <span class="dot"></span>
+          Oyuki
+        </a>
+
+        <button
+          class="btn btn-ghost d-lg-none"
+          type="button"
+          data-bs-toggle="offcanvas"
+          data-bs-target="#oyMenu"
+          aria-controls="oyMenu"
+          aria-label="Open navigation"
+        >
+          <i class="bi bi-list"></i>
+        </button>
+
+        <div
+          class="d-none d-lg-flex align-items-center gap-1"
+        >
+          <a class="nav-link" href="/home.html">
+            Home
+          </a>
+
+          <a class="nav-link" href="/shop.html">
+            Marketplace
+          </a>
+
+          <a class="nav-link" href="/meals.html">
+            Ready Meals
+          </a>
+
+          <a class="nav-link" href="/kitchens.html">
+            Kitchens
+          </a>
+
+          <a class="nav-link" href="/about.html">
+            About
+          </a>
+
+          <a class="nav-link" href="/contact.html">
+            Contact
+          </a>
+        </div>
+
+        <div
+          class="d-none d-lg-flex align-items-center"
+        >
+          ${
+            Auth.isCustomer()
+              ? `
+                <a
+                  href="/cart.html"
+                  class="btn btn-ghost me-2"
+                >
+                  <i class="bi bi-basket2"></i>
+
+                  <span
+                    id="cart-badge"
+                    class="cart-badge"
+                    style="display:none"
+                  >
+                    0
+                  </span>
+                </a>
+              `
+              : ''
+          }
+
+          ${account}
+        </div>
+      </div>
+    </nav>
+
+    <div
+      class="offcanvas offcanvas-end"
+      tabindex="-1"
+      id="oyMenu"
+      aria-labelledby="oyMenuLabel"
+    >
+      <div class="offcanvas-header">
+        <a
+          id="oyMenuLabel"
+          href="/home.html"
+          class="brand"
+        >
+          <span class="dot"></span>
+          Oyuki
+        </a>
+
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="offcanvas"
+          aria-label="Close"
+        ></button>
+      </div>
+
+      <div
+        class="offcanvas-body d-flex flex-column gap-2"
+      >
+        <a class="nav-link" href="/home.html">
+          Home
+        </a>
+
+        <a class="nav-link" href="/shop.html">
+          Marketplace
+        </a>
+
+        <a class="nav-link" href="/meals.html">
+          Ready Meals
+        </a>
+
+        <a class="nav-link" href="/kitchens.html">
+          Kitchens
+        </a>
+
+        <a class="nav-link" href="/about.html">
+          About
+        </a>
+
+        <a class="nav-link" href="/contact.html">
+          Contact
+        </a>
+
+        <hr>
+
+        ${account}
+      </div>
+    </div>
+  `;
+
+  const currentPage =
+    window.location.pathname
+      .split('/')
+      .pop() || 'home.html';
+
+  holder
+    .querySelectorAll('.nav-link')
+    .forEach(link => {
+      const href =
+        link.getAttribute('href') || '';
+
+      const linkPage =
+        href.split('/').pop();
+
+      if (linkPage === currentPage) {
+        link.classList.add('active');
+      }
+    });
+}
   function renderFooter() {
     const holder =
       document.getElementById('oy-footer');
