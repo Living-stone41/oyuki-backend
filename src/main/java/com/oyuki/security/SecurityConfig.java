@@ -2,6 +2,7 @@ package com.oyuki.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -36,8 +37,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
 
                 /*
-                 * Spring Security automatically finds and uses
-                 * the CorsConfigurationSource bean from CorsConfig.
+                 * Uses the CorsConfigurationSource bean
+                 * defined inside CorsConfig.java.
                  */
                 .cors(cors -> {
                 })
@@ -50,48 +51,68 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // Authentication endpoints
+                        /*
+                         * Allow browser CORS preflight requests.
+                         */
+                        .requestMatchers(
+                                HttpMethod.OPTIONS,
+                                "/**"
+                        ).permitAll()
+
+                        /*
+                         * Public health and error endpoints.
+                         */
+                        .requestMatchers(
+                                "/",
+                                "/api/health",
+                                "/error"
+                        ).permitAll()
+
+                        /*
+                         * Authentication endpoints.
+                         */
                         .requestMatchers(
                                 "/api/auth/**"
                         ).permitAll()
 
-                        // Public marketplace endpoints
+                        /*
+                         * Public marketplace endpoints.
+                         */
                         .requestMatchers(
                                 "/api/marketplace/**"
                         ).permitAll()
 
-                        // Public review endpoints
+                        /*
+                         * Public reviews.
+                         */
                         .requestMatchers(
                                 "/api/reviews/providers/**"
                         ).permitAll()
 
-                        // Newsletter subscription
+                        /*
+                         * Newsletter subscription.
+                         */
                         .requestMatchers(
                                 "/api/newsletter/**"
                         ).permitAll()
 
-                        // Publicly accessible uploaded images
+                        /*
+                         * Public uploaded product and profile images.
+                         */
                         .requestMatchers(
                                 "/uploads/**"
                         ).permitAll()
 
-                        // Spring Boot error endpoint
-                        .requestMatchers(
-                                "/error"
-                        ).permitAll()
-
-                        // Browser preflight requests
-                        .requestMatchers(
-                                org.springframework.http.HttpMethod.OPTIONS,
-                                "/**"
-                        ).permitAll()
-
-                        // Admin endpoints
+                        /*
+                         * Administrator endpoints.
+                         */
                         .requestMatchers(
                                 "/api/admin/**"
                         ).hasRole("ADMIN")
 
-                        // Account officer endpoints
+                        /*
+                         * Account officer endpoints.
+                         */
                         .requestMatchers(
                                 "/api/account-officer/**"
                         ).hasAnyRole(
@@ -99,7 +120,9 @@ public class SecurityConfig {
                                 "ADMIN"
                         )
 
-                        // Logistics administrator endpoints
+                        /*
+                         * Logistics administrator endpoints.
+                         */
                         .requestMatchers(
                                 "/api/logistics-admin/**"
                         ).hasAnyRole(
@@ -108,7 +131,9 @@ public class SecurityConfig {
                                 "ADMIN"
                         )
 
-                        // Rider endpoints
+                        /*
+                         * Rider endpoints.
+                         */
                         .requestMatchers(
                                 "/api/rider/**"
                         ).hasAnyRole(
@@ -116,7 +141,9 @@ public class SecurityConfig {
                                 "ADMIN"
                         )
 
-                        // All remaining requests require authentication
+                        /*
+                         * Every other endpoint requires login.
+                         */
                         .anyRequest()
                         .authenticated()
                 )
