@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin login | Oyuki</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/admin.css">
+</head>
+<body class="login-body">
+  <main class="login-shell">
+    <section class="login-brand-panel">
+      <a class="brand" href="https://oyukimarketplace.com/home.html"><span>O</span> Oyuki</a>
+      <div>
+        <p class="eyebrow">Administration</p>
+        <h1>Manage the Oyuki marketplace securely.</h1>
+        <p>Review provider applications, manage users, monitor orders and confirm payments from one dashboard.</p>
+      </div>
+      <small>Authorized administrators only.</small>
+    </section>
+
+    <section class="login-form-panel">
+      <div class="login-card">
+        <div class="mobile-brand">Oyuki Admin</div>
+        <h2>Welcome back</h2>
+        <p class="muted">Enter your administrator account details.</p>
+        <div id="loginError" class="alert error" hidden></div>
+        <form id="adminLoginForm">
+          <label for="identifier">Email or phone number</label>
+          <div class="input-wrap"><i class="bi bi-person"></i><input id="identifier" autocomplete="username" required placeholder="Email or phone number"></div>
+
+          <label for="password">Password</label>
+          <div class="input-wrap"><i class="bi bi-lock"></i><input id="password" type="password" autocomplete="current-password" required placeholder="Password"><button id="togglePassword" type="button" aria-label="Show password"><i class="bi bi-eye"></i></button></div>
+
+          <button id="loginButton" class="primary-button" type="submit">Log in to admin</button>
+        </form>
+        <a class="back-link" href="https://oyukimarketplace.com/home.html"><i class="bi bi-arrow-left"></i> Back to marketplace</a>
+      </div>
+    </section>
+  </main>
+  <script src="assets/js/admin-api.js?v=1"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (AdminApi.isAdmin()) location.replace('admin.html');
+      const form = document.getElementById('adminLoginForm');
+      const errorBox = document.getElementById('loginError');
+      const button = document.getElementById('loginButton');
+      const password = document.getElementById('password');
+      document.getElementById('togglePassword').addEventListener('click', event => {
+        const showing = password.type === 'text';
+        password.type = showing ? 'password' : 'text';
+        event.currentTarget.innerHTML = showing ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
+      });
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        errorBox.hidden = true;
+        button.disabled = true;
+        button.textContent = 'Logging in…';
+        try {
+          await AdminApi.login(document.getElementById('identifier').value.trim(), password.value);
+          location.replace('admin.html');
+        } catch (error) {
+          errorBox.textContent = error.message;
+          errorBox.hidden = false;
+        } finally {
+          button.disabled = false;
+          button.textContent = 'Log in to admin';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
