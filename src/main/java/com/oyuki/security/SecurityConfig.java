@@ -45,7 +45,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
 
                         /*
-                         * Allow all browser CORS preflight requests.
+                         * Allow browser CORS preflight requests.
                          */
                         .requestMatchers(
                                 HttpMethod.OPTIONS,
@@ -53,10 +53,50 @@ public class SecurityConfig {
                         ).permitAll()
 
                         /*
-                         * Public Railway health routes.
+                         * Public website pages and assets.
                          */
                         .requestMatchers(
                                 "/",
+                                "/index.html",
+                                "/home.html",
+                                "/about.html",
+                                "/contact.html",
+                                "/shop.html",
+                                "/meals.html",
+                                "/kitchens.html",
+                                "/kitchen-detail.html",
+                                "/product.html",
+                                "/login.html",
+                                "/register.html",
+                                "/verify-otp.html",
+                                "/forgot-password.html",
+                                "/reset-password.html",
+                                "/privacy.html",
+                                "/terms.html",
+                                "/feature-center.html",
+                                "/favicon.ico",
+                                "/assets/**"
+                        ).permitAll()
+
+                        /*
+                         * Admin frontend pages and assets.
+                         *
+                         * These files can load publicly, but all admin
+                         * information remains protected by /api/admin/**.
+                         */
+                        .requestMatchers(
+                                "/admin",
+                                "/admin/",
+                                "/admin/index.html",
+                                "/admin/admin-login.html",
+                                "/admin/admin.html",
+                                "/admin/assets/**"
+                        ).permitAll()
+
+                        /*
+                         * Railway health and Spring error routes.
+                         */
+                        .requestMatchers(
                                 "/api/health",
                                 "/error"
                         ).permitAll()
@@ -74,6 +114,14 @@ public class SecurityConfig {
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/marketplace/**"
+                        ).permitAll()
+
+                        /*
+                         * Public statistics routes.
+                         */
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/public/**"
                         ).permitAll()
 
                         /*
@@ -99,7 +147,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         /*
-                         * Administrator routes.
+                         * Administrator API routes.
                          */
                         .requestMatchers(
                                 "/api/admin/**"
@@ -138,7 +186,7 @@ public class SecurityConfig {
                         )
 
                         /*
-                         * Seller and farmer routes.
+                         * Seller and shared provider routes.
                          */
                         .requestMatchers(
                                 "/api/seller/**",
@@ -151,7 +199,7 @@ public class SecurityConfig {
                         )
 
                         /*
-                         * Kitchen profile routes.
+                         * Kitchen routes.
                          */
                         .requestMatchers(
                                 "/api/kitchen/**"
@@ -161,7 +209,70 @@ public class SecurityConfig {
                         )
 
                         /*
-                         * Every other route requires authentication.
+                         * Product management routes.
+                         */
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/products/**"
+                        ).hasAnyRole(
+                                "SELLER",
+                                "FARMER",
+                                "KITCHEN",
+                                "ADMIN"
+                        )
+
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/products/**"
+                        ).hasAnyRole(
+                                "SELLER",
+                                "FARMER",
+                                "KITCHEN",
+                                "ADMIN"
+                        )
+
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/products/**"
+                        ).hasAnyRole(
+                                "SELLER",
+                                "FARMER",
+                                "KITCHEN",
+                                "ADMIN"
+                        )
+
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/products/**"
+                        ).hasAnyRole(
+                                "SELLER",
+                                "FARMER",
+                                "KITCHEN",
+                                "ADMIN"
+                        )
+
+                        /*
+                         * Viewing provider-owned products requires login.
+                         */
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/products/**"
+                        ).hasAnyRole(
+                                "SELLER",
+                                "FARMER",
+                                "KITCHEN",
+                                "ADMIN"
+                        )
+
+                        /*
+                         * Any remaining API route requires authentication.
+                         */
+                        .requestMatchers(
+                                "/api/**"
+                        ).authenticated()
+
+                        /*
+                         * Any remaining request also requires authentication.
                          */
                         .anyRequest()
                         .authenticated()
