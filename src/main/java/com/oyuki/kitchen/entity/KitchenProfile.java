@@ -29,7 +29,10 @@ public class KitchenProfile {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @OneToOne(
+            fetch = FetchType.LAZY,
+            optional = false
+    )
     @JoinColumn(
             name = "user_id",
             nullable = false,
@@ -58,19 +61,37 @@ public class KitchenProfile {
     )
     private String cuisine;
 
-    @Column(name = "profile_image_url", length = 500)
+    @Column(
+            name = "profile_image_url",
+            length = 500
+    )
     private String profileImageUrl;
 
-    @Column(name = "cover_image_url", length = 500)
+    @Column(
+            name = "cover_image_url",
+            length = 500
+    )
     private String coverImageUrl;
 
-    @Column(name = "state", nullable = false, length = 100)
+    @Column(
+            name = "state",
+            nullable = false,
+            length = 100
+    )
     private String state;
 
-    @Column(name = "lga", nullable = false, length = 100)
+    @Column(
+            name = "lga",
+            nullable = false,
+            length = 100
+    )
     private String lga;
 
-    @Column(name = "area", nullable = false, length = 150)
+    @Column(
+            name = "area",
+            nullable = false,
+            length = 150
+    )
     private String area;
 
     @Column(
@@ -80,25 +101,37 @@ public class KitchenProfile {
     )
     private String addressLine;
 
-    @Column(name = "latitude", precision = 10, scale = 7)
+    @Column(
+            name = "latitude",
+            precision = 10,
+            scale = 7
+    )
     private BigDecimal latitude;
 
-    @Column(name = "longitude", precision = 10, scale = 7)
+    @Column(
+            name = "longitude",
+            precision = 10,
+            scale = 7
+    )
     private BigDecimal longitude;
 
-    @Column(name = "id_document_url", length = 500)
-    private String idDocumentUrl;
     @Column(
-        name = "business_document_url",
-        length = 500
-)
-private String businessDocumentUrl;
+            name = "id_document_url",
+            length = 500
+    )
+    private String idDocumentUrl;
 
-@Column(
-        name = "cac_document_url",
-        length = 500
-)
-private String cacDocumentUrl;
+    @Column(
+            name = "business_document_url",
+            length = 500
+    )
+    private String businessDocumentUrl;
+
+    @Column(
+            name = "cac_document_url",
+            length = 500
+    )
+    private String cacDocumentUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(
@@ -110,13 +143,22 @@ private String cacDocumentUrl;
     private FacialVerificationStatus facialVerificationStatus =
             FacialVerificationStatus.NOT_SUBMITTED;
 
-    @Column(name = "bank_name", length = 150)
+    @Column(
+            name = "bank_name",
+            length = 150
+    )
     private String bankName;
 
-    @Column(name = "account_name", length = 150)
+    @Column(
+            name = "account_name",
+            length = 150
+    )
     private String accountName;
 
-    @Column(name = "account_number", length = 30)
+    @Column(
+            name = "account_number",
+            length = 30
+    )
     private String accountNumber;
 
     @Column(
@@ -126,18 +168,29 @@ private String cacDocumentUrl;
     )
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(
+            name = "updated_at",
+            nullable = false
+    )
     private LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now =
+                LocalDateTime.now();
+
         createdAt = now;
         updatedAt = now;
+
+        if (facialVerificationStatus == null) {
+            facialVerificationStatus =
+                    FacialVerificationStatus.NOT_SUBMITTED;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt =
+                LocalDateTime.now();
     }
 }

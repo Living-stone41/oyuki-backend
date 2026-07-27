@@ -1,0 +1,20 @@
+OYUKI UPDATE PACKAGE
+
+Implemented:
+1. Marketplace-style responsive homepage with promotional carousel, category image shortcuts, product sections, and mobile bottom navigation.
+2. Chat-style contact/support page connected to the existing contact API.
+3. Modern responsive cart page.
+4. Paystack-first checkout UI and redirect/verification flow using the existing Paystack backend endpoints.
+5. More accurate delivery fees when coordinates are available: customer addresses now support latitude/longitude, checkout can capture browser location, and delivery adds a road-distance estimate surcharge after the first 5 km.
+6. Kitchen gallery support without a fixed eight-picture limit:
+   - POST /api/kitchen/profile/gallery
+   - GET /api/kitchen/profile/gallery
+   - DELETE /api/kitchen/profile/gallery/{imageId}
+7. Admin application details now include full provider information, kitchen pictures, and authenticated downloads for the full JSON application and ID document.
+8. Added DATABASE-UPDATES.sql for the required MySQL changes.
+
+IMPORTANT BEFORE DEPLOYMENT
+- Run DATABASE-UPDATES.sql once against the production database if Hibernate ddl-auto is not set to update.
+- Set PAYSTACK_SECRET_KEY, PAYSTACK_PUBLIC_KEY and PAYSTACK_CALLBACK_URL in Railway.
+- Keep frontend and backend CORS origins configured for oyukimarketplace.com and admin.oyukimarketplace.com.
+- The build could not be executed in this environment because Maven dependencies could not be downloaded; run mvnw clean package -DskipTests locally before pushing.

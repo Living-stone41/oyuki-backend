@@ -48,10 +48,11 @@ public record AdminApplicationResponse(
         String accountName,
         String accountNumber,
 
-        List<KitchenImageResponse> kitchenImages,
-
         LocalDateTime registeredAt,
         LocalDateTime profileSubmittedAt,
+
+        List<KitchenImageResponse> kitchenImages,
+
         boolean profileCompleted
 ) {
 
@@ -94,28 +95,32 @@ public record AdminApplicationResponse(
                 profile.getAccountName(),
                 profile.getAccountNumber(),
 
-                List.of(),
-
                 user.getCreatedAt(),
                 profile.getCreatedAt(),
 
-                hasText(profile.getProfileImageUrl())
+                List.of(),
+
+                hasText(profile.getBusinessName())
+                        && hasText(profile.getBio())
+                        && hasText(profile.getProfileImageUrl())
                         && hasText(profile.getIdDocumentUrl())
-                        && hasText(profile.getBusinessName())
+                        && hasText(profile.getState())
+                        && hasText(profile.getLga())
+                        && hasText(profile.getArea())
                         && hasText(profile.getAddressLine())
         );
     }
 
     public static AdminApplicationResponse fromKitchen(
             KitchenProfile profile,
-            List<KitchenImage> kitchenImages
+            List<KitchenImage> images
     ) {
         User user = profile.getUser();
 
         List<KitchenImageResponse> gallery =
-                kitchenImages == null
+                images == null
                         ? List.of()
-                        : kitchenImages.stream()
+                        : images.stream()
                                 .map(KitchenImageResponse::from)
                                 .toList();
 
@@ -153,14 +158,18 @@ public record AdminApplicationResponse(
                 profile.getAccountName(),
                 profile.getAccountNumber(),
 
-                gallery,
-
                 user.getCreatedAt(),
                 profile.getCreatedAt(),
 
-                hasText(profile.getProfileImageUrl())
+                gallery,
+
+                hasText(profile.getKitchenName())
+                        && hasText(profile.getBio())
+                        && hasText(profile.getProfileImageUrl())
                         && hasText(profile.getIdDocumentUrl())
-                        && hasText(profile.getKitchenName())
+                        && hasText(profile.getState())
+                        && hasText(profile.getLga())
+                        && hasText(profile.getArea())
                         && hasText(profile.getAddressLine())
                         && !gallery.isEmpty()
         );
@@ -203,10 +212,11 @@ public record AdminApplicationResponse(
                 null,
                 null,
 
-                List.of(),
-
                 user.getCreatedAt(),
                 null,
+
+                List.of(),
+
                 false
         );
     }

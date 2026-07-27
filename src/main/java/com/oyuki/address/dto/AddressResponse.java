@@ -3,6 +3,7 @@ package com.oyuki.address.dto;
 import com.oyuki.address.entity.CustomerAddress;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 public record AddressResponse(
 
@@ -19,6 +20,9 @@ public record AddressResponse(
         String landmark,
         String postalCode,
         String deliveryInstructions,
+
+        BigDecimal latitude,
+        BigDecimal longitude,
 
         boolean defaultAddress,
 
@@ -44,6 +48,9 @@ public record AddressResponse(
                 address.getLandmark(),
                 address.getPostalCode(),
                 address.getDeliveryInstructions(),
+
+                address.getLatitude(),
+                address.getLongitude(),
 
                 address.isDefaultAddress(),
 

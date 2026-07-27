@@ -87,11 +87,9 @@ public class CustomerAddressService {
                         )
                         .landmark(clean(request.landmark()))
                         .postalCode(clean(request.postalCode()))
-                        .deliveryInstructions(
-                                clean(
-                                        request.deliveryInstructions()
-                                )
-                        )
+                        .deliveryInstructions(clean(request.deliveryInstructions()))
+                        .latitude(request.latitude())
+                        .longitude(request.longitude())
                         .defaultAddress(makeDefault)
                         .build();
 
@@ -192,9 +190,9 @@ public class CustomerAddressService {
                 clean(request.postalCode())
         );
 
-        address.setDeliveryInstructions(
-                clean(request.deliveryInstructions())
-        );
+        address.setDeliveryInstructions(clean(request.deliveryInstructions()));
+        address.setLatitude(request.latitude());
+        address.setLongitude(request.longitude());
 
         if (
                 Boolean.TRUE.equals(

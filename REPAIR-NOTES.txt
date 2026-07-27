@@ -1,0 +1,13 @@
+OYUKI BACKEND REPAIR
+
+Main correction:
+- SellerProfileRequest.java now contains only the SellerProfileRequest record.
+- AdminApprovalService.java remains in com/oyuki/admin/service/AdminApprovalService.java.
+- Confirmed that public Java type names match their filenames.
+- Confirmed Lombok annotations are present on User, CustomerAddress, SellerProfile and KitchenProfile.
+
+Build on Windows PowerShell from the folder containing pom.xml and mvnw.cmd:
+  .\mvnw.cmd clean package -DskipTests
+
+Important:
+Do not paste AdminApprovalService.java into seller/dto/SellerProfileRequest.java.

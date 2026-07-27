@@ -408,7 +408,7 @@ public class AdminApprovalService {
             String businessName,
             String addressLine,
             String profileImageUrl,
-            String 
+            String idDocumentUrl
     ) {
         if (
                 businessName == null ||

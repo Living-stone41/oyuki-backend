@@ -24,7 +24,8 @@ public class FileStorageService {
                     "profiles",
                     "covers",
                     "documents",
-                    "products"
+                    "products",
+                    "kitchens"
             );
 
     private static final Map<String, String> IMAGE_TYPES =

@@ -10,9 +10,7 @@ import java.math.BigDecimal;
 
 public record SellerProfileRequest(
 
-        @NotBlank(
-                message = "Business name is required"
-        )
+        @NotBlank(message = "Business name is required")
         @Size(
                 max = 150,
                 message = "Business name cannot exceed 150 characters"
@@ -23,9 +21,7 @@ public record SellerProfileRequest(
         )
         String businessName,
 
-        @NotBlank(
-                message = "Seller bio is required"
-        )
+        @NotBlank(message = "Seller bio is required")
         @Size(
                 min = 20,
                 max = 1500,
@@ -33,10 +29,6 @@ public record SellerProfileRequest(
         )
         String bio,
 
-        /*
-         * Profile and document URLs are normally filled after
-         * successful file upload.
-         */
         @Size(
                 max = 500,
                 message = "Profile image URL cannot exceed 500 characters"
@@ -49,9 +41,7 @@ public record SellerProfileRequest(
         )
         String coverImageUrl,
 
-        @NotBlank(
-                message = "State is required"
-        )
+        @NotBlank(message = "State is required")
         @Size(
                 max = 100,
                 message = "State cannot exceed 100 characters"
@@ -62,9 +52,7 @@ public record SellerProfileRequest(
         )
         String state,
 
-        @NotBlank(
-                message = "LGA is required"
-        )
+        @NotBlank(message = "LGA is required")
         @Size(
                 max = 100,
                 message = "LGA cannot exceed 100 characters"
@@ -75,18 +63,14 @@ public record SellerProfileRequest(
         )
         String lga,
 
-        @NotBlank(
-                message = "Area is required"
-        )
+        @NotBlank(message = "Area is required")
         @Size(
                 max = 150,
                 message = "Area cannot exceed 150 characters"
         )
         String area,
 
-        @NotBlank(
-                message = "Full address is required"
-        )
+        @NotBlank(message = "Full address is required")
         @Size(
                 max = 500,
                 message = "Full address cannot exceed 500 characters"
@@ -113,27 +97,18 @@ public record SellerProfileRequest(
         )
         BigDecimal longitude,
 
-        /*
-         * Government-issued identification document.
-         */
         @Size(
                 max = 500,
                 message = "ID document URL cannot exceed 500 characters"
         )
         String idDocumentUrl,
 
-        /*
-         * Optional business registration document.
-         */
         @Size(
                 max = 500,
                 message = "Business document URL cannot exceed 500 characters"
         )
         String businessDocumentUrl,
 
-        /*
-         * Optional Corporate Affairs Commission document.
-         */
         @Size(
                 max = 500,
                 message = "CAC document URL cannot exceed 500 characters"
@@ -165,6 +140,5 @@ public record SellerProfileRequest(
                 message = "Account number must contain exactly 10 digits"
         )
         String accountNumber
-
 ) {
 }
