@@ -1,21 +1,39 @@
 package com.oyuki.admin.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oyuki.admin.dto.AdminApplicationResponse;
 import com.oyuki.admin.dto.RejectApplicationRequest;
 import com.oyuki.kitchen.entity.KitchenProfile;
 import com.oyuki.kitchen.repository.KitchenProfileRepository;
+import com.oyuki.kitchen.repository.KitchenImageRepository;
 import com.oyuki.seller.entity.SellerProfile;
 import com.oyuki.seller.repository.SellerProfileRepository;
 import com.oyuki.user.entity.User;
 import com.oyuki.user.enums.AccountStatus;
 import com.oyuki.user.enums.Role;
 import com.oyuki.user.repository.UserRepository;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class AdminApprovalService {
@@ -23,15 +41,35 @@ public class AdminApprovalService {
     private final UserRepository userRepository;
     private final SellerProfileRepository sellerProfileRepository;
     private final KitchenProfileRepository kitchenProfileRepository;
+    private final KitchenImageRepository kitchenImageRepository;
+    private final ObjectMapper objectMapper;
+
+    /*
+     * This defaults to the "uploads" folder in the project.
+     *
+     * You may override it in application.properties:
+     *
+     * app.upload.dir=/app/uploads
+     */
+    private final Path uploadRoot;
 
     public AdminApprovalService(
             UserRepository userRepository,
             SellerProfileRepository sellerProfileRepository,
-            KitchenProfileRepository kitchenProfileRepository
+            KitchenProfileRepository kitchenProfileRepository,
+            KitchenImageRepository kitchenImageRepository,
+            ObjectMapper objectMapper,
+            @Value("${app.upload.root:uploads}") String uploadDirectory
     ) {
         this.userRepository = userRepository;
         this.sellerProfileRepository = sellerProfileRepository;
         this.kitchenProfileRepository = kitchenProfileRepository;
+        this.kitchenImageRepository = kitchenImageRepository;
+        this.objectMapper = objectMapper;
+
+        this.uploadRoot = Paths.get(uploadDirectory)
+                .toAbsolutePath()
+                .normalize();
     }
 
     @Transactional(readOnly = true)
@@ -95,7 +133,8 @@ public class AdminApprovalService {
         user.setStatus(AccountStatus.ACTIVE);
         user.setStatusReason(null);
 
-        User savedUser = userRepository.save(user);
+        User savedUser =
+                userRepository.save(user);
 
         return convertToResponse(savedUser);
     }
@@ -109,32 +148,194 @@ public class AdminApprovalService {
 
         validatePendingApplication(user);
 
-        user.setStatus(AccountStatus.REJECTED);
-        user.setStatusReason(request.reason().trim());
+        if (
+                request == null ||
+                request.reason() == null ||
+                request.reason().isBlank()
+        ) {
+            throw new IllegalArgumentException(
+                    "A rejection reason is required"
+            );
+        }
+
+        user.setStatus(
+                AccountStatus.REJECTED
+        );
+
+        user.setStatusReason(
+                request.reason().trim()
+        );
 
         /*
-         * This invalidates JWTs issued before rejection.
+         * Invalidate JWTs issued before the rejection.
          */
-        user.setTokenVersion(user.getTokenVersion() + 1);
+        user.setTokenVersion(
+                user.getTokenVersion() + 1
+        );
 
-        User savedUser = userRepository.save(user);
+        User savedUser =
+                userRepository.save(user);
 
         return convertToResponse(savedUser);
     }
 
-    private User getSellerOrKitchen(Long userId) {
+    /*
+     * Downloads the provider's uploaded identification document.
+     */
+    @Transactional(readOnly = true)
+    public ResponseEntity<Resource> downloadIdDocument(
+            Long userId
+    ) {
+        User user =
+                getSellerOrKitchen(userId);
 
-        User user = userRepository
-                .findById(userId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Application was not found"
-                        )
+        String documentUrl =
+                getIdDocumentUrl(user);
+
+        if (
+                documentUrl == null ||
+                documentUrl.isBlank()
+        ) {
+            throw new IllegalStateException(
+                    "The provider has not uploaded an identification document"
+            );
+        }
+
+        Path documentPath =
+                resolveUploadedFile(documentUrl);
+
+        if (
+                !Files.exists(documentPath) ||
+                !Files.isRegularFile(documentPath)
+        ) {
+            throw new IllegalStateException(
+                    "The identification document could not be found on the server"
+            );
+        }
+
+        Resource resource =
+                new FileSystemResource(
+                        documentPath
                 );
 
-        if (user.getRole() != Role.SELLER
-                && user.getRole() != Role.KITCHEN) {
+        String contentType =
+                detectContentType(documentPath);
 
+        String filename =
+                documentPath
+                        .getFileName()
+                        .toString();
+
+        return ResponseEntity.ok()
+                .contentType(
+                        MediaType.parseMediaType(
+                                contentType
+                        )
+                )
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition
+                                .attachment()
+                                .filename(filename)
+                                .build()
+                                .toString()
+                )
+                .contentLength(
+                        getFileSize(documentPath)
+                )
+                .body(resource);
+    }
+
+    /*
+     * Downloads the complete application details as a JSON file.
+     *
+     * This includes the user details, business profile, address,
+     * bank details and verification information returned by
+     * AdminApplicationResponse.
+     */
+    @Transactional(readOnly = true)
+    public ResponseEntity<Resource> downloadApplication(
+            Long userId
+    ) {
+        User user =
+                getSellerOrKitchen(userId);
+
+        AdminApplicationResponse application =
+                convertToResponse(user);
+
+        byte[] content;
+
+        try {
+            String json =
+                    objectMapper
+                            .writerWithDefaultPrettyPrinter()
+                            .writeValueAsString(
+                                    application
+                            );
+
+            content =
+                    json.getBytes(
+                            StandardCharsets.UTF_8
+                    );
+
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException(
+                    "The application file could not be generated",
+                    exception
+            );
+        }
+
+        String safeName =
+                createSafeFilename(
+                        application.fullName()
+                );
+
+        String filename =
+                "oyuki-application-" +
+                userId +
+                "-" +
+                safeName +
+                ".json";
+
+        ByteArrayResource resource =
+                new ByteArrayResource(
+                        content
+                );
+
+        return ResponseEntity.ok()
+                .contentType(
+                        MediaType.APPLICATION_JSON
+                )
+                .contentLength(
+                        content.length
+                )
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition
+                                .attachment()
+                                .filename(filename)
+                                .build()
+                                .toString()
+                )
+                .body(resource);
+    }
+
+    private User getSellerOrKitchen(
+            Long userId
+    ) {
+        User user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Application was not found"
+                                )
+                        );
+
+        if (
+                user.getRole() != Role.SELLER &&
+                user.getRole() != Role.KITCHEN
+        ) {
             throw new IllegalStateException(
                     "This user is not a seller or kitchen"
             );
@@ -143,90 +344,260 @@ public class AdminApprovalService {
         return user;
     }
 
-    private void validatePendingApplication(User user) {
-
-        if (user.getStatus() !=
-                AccountStatus.PENDING_APPROVAL) {
-
+    private void validatePendingApplication(
+            User user
+    ) {
+        if (
+                user.getStatus() !=
+                AccountStatus.PENDING_APPROVAL
+        ) {
             throw new IllegalStateException(
                     "This application is not awaiting approval"
             );
         }
     }
 
-    private void validateProfileCompleted(User user) {
-
-        if (user.getRole() == Role.SELLER) {
+    private void validateProfileCompleted(
+            User user
+    ) {
+        if (
+                user.getRole() ==
+                Role.SELLER
+        ) {
             SellerProfile profile =
                     sellerProfileRepository
-                            .findByUserId(user.getId())
+                            .findByUserId(
+                                    user.getId()
+                            )
                             .orElseThrow(() ->
                                     new IllegalStateException(
                                             "The seller must complete their profile before approval"
                                     )
                             );
 
-            requireApprovalFiles(
+            requireApprovalFields(
+                    profile.getBusinessName(),
+                    profile.getAddressLine(),
                     profile.getProfileImageUrl(),
                     profile.getIdDocumentUrl()
             );
+
             return;
         }
 
         KitchenProfile profile =
                 kitchenProfileRepository
-                        .findByUserId(user.getId())
+                        .findByUserId(
+                                user.getId()
+                        )
                         .orElseThrow(() ->
                                 new IllegalStateException(
                                         "The kitchen must complete its profile before approval"
                                 )
                         );
 
-        requireApprovalFiles(
+        requireApprovalFields(
+                profile.getKitchenName(),
+                profile.getAddressLine(),
                 profile.getProfileImageUrl(),
                 profile.getIdDocumentUrl()
         );
     }
 
-    private void requireApprovalFiles(
+    private void requireApprovalFields(
+            String businessName,
+            String addressLine,
             String profileImageUrl,
-            String idDocumentUrl
+            String 
     ) {
-        if (profileImageUrl == null
-                || profileImageUrl.isBlank()) {
+        if (
+                businessName == null ||
+                businessName.isBlank()
+        ) {
+            throw new IllegalStateException(
+                    "A business name is required before approval"
+            );
+        }
+
+        if (
+                addressLine == null ||
+                addressLine.isBlank()
+        ) {
+            throw new IllegalStateException(
+                    "A business address is required before approval"
+            );
+        }
+
+        if (
+                profileImageUrl == null ||
+                profileImageUrl.isBlank()
+        ) {
             throw new IllegalStateException(
                     "A profile picture is required before approval"
             );
         }
 
-        if (idDocumentUrl == null
-                || idDocumentUrl.isBlank()) {
+        if (
+                idDocumentUrl == null ||
+                idDocumentUrl.isBlank()
+        ) {
             throw new IllegalStateException(
                     "An identification document is required before approval"
             );
         }
     }
 
+    private String getIdDocumentUrl(
+            User user
+    ) {
+        if (
+                user.getRole() ==
+                Role.SELLER
+        ) {
+            SellerProfile profile =
+                    sellerProfileRepository
+                            .findByUserId(
+                                    user.getId()
+                            )
+                            .orElseThrow(() ->
+                                    new IllegalStateException(
+                                            "Seller profile was not found"
+                                    )
+                            );
+
+            return profile.getIdDocumentUrl();
+        }
+
+        KitchenProfile profile =
+                kitchenProfileRepository
+                        .findByUserId(
+                                user.getId()
+                        )
+                        .orElseThrow(() ->
+                                new IllegalStateException(
+                                        "Kitchen profile was not found"
+                                )
+                        );
+
+        return profile.getIdDocumentUrl();
+    }
+
+    private Path resolveUploadedFile(
+            String storedUrl
+    ) {
+        String cleanValue = storedUrl.trim().replace("\\", "/");
+        String filename = Path.of(cleanValue).getFileName().toString();
+        Path documentFolder = uploadRoot.resolve("documents").normalize();
+        Path resolvedPath = documentFolder.resolve(filename).normalize();
+        if (!resolvedPath.startsWith(documentFolder)) {
+            throw new IllegalStateException("Invalid document path");
+        }
+        return resolvedPath;
+    }
+
+    private String detectContentType(
+            Path path
+    ) {
+        try {
+            String detected =
+                    Files.probeContentType(
+                            path
+                    );
+
+            if (
+                    detected != null &&
+                    !detected.isBlank()
+            ) {
+                return detected;
+            }
+
+        } catch (IOException ignored) {
+            /*
+             * Use the default type below.
+             */
+        }
+
+        return MediaType
+                .APPLICATION_OCTET_STREAM_VALUE;
+    }
+
+    private long getFileSize(
+            Path path
+    ) {
+        try {
+            return Files.size(path);
+        } catch (IOException exception) {
+            throw new IllegalStateException(
+                    "The document size could not be determined",
+                    exception
+            );
+        }
+    }
+
+    private String createSafeFilename(
+            String value
+    ) {
+        if (
+                value == null ||
+                value.isBlank()
+        ) {
+            return "provider";
+        }
+
+        String safeValue =
+                value
+                        .trim()
+                        .toLowerCase(
+                                Locale.ROOT
+                        )
+                        .replaceAll(
+                                "[^a-z0-9]+",
+                                "-"
+                        )
+                        .replaceAll(
+                                "^-+|-+$",
+                                ""
+                        );
+
+        return safeValue.isBlank()
+                ? "provider"
+                : safeValue;
+    }
+
     private AdminApplicationResponse convertToResponse(
             User user
     ) {
-        if (user.getRole() == Role.SELLER) {
-
+        if (
+                user.getRole() ==
+                Role.SELLER
+        ) {
             return sellerProfileRepository
-                    .findByUserId(user.getId())
-                    .map(AdminApplicationResponse::fromSeller)
+                    .findByUserId(
+                            user.getId()
+                    )
+                    .map(
+                            AdminApplicationResponse::fromSeller
+                    )
                     .orElseGet(() ->
-                            AdminApplicationResponse.incomplete(user)
+                            AdminApplicationResponse
+                                    .incomplete(user)
                     );
         }
 
-        if (user.getRole() == Role.KITCHEN) {
-
+        if (
+                user.getRole() ==
+                Role.KITCHEN
+        ) {
             return kitchenProfileRepository
-                    .findByUserId(user.getId())
-                    .map(AdminApplicationResponse::fromKitchen)
+                    .findByUserId(
+                            user.getId()
+                    )
+                    .map(profile -> AdminApplicationResponse.fromKitchen(
+                            profile, kitchenImageRepository.findAllByKitchenProfileIdOrderByDisplayOrderAscIdAsc(profile.getId())
+                    ))
                     .orElseGet(() ->
-                            AdminApplicationResponse.incomplete(user)
+                            AdminApplicationResponse
+                                    .incomplete(user)
                     );
         }
 

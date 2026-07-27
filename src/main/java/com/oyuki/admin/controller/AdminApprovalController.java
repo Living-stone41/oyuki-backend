@@ -4,7 +4,11 @@ import com.oyuki.admin.dto.AdminApplicationResponse;
 import com.oyuki.admin.dto.RejectApplicationRequest;
 import com.oyuki.admin.service.AdminApprovalService;
 import com.oyuki.common.response.ApiResponse;
+
 import jakarta.validation.Valid;
+
+import org.springframework.core.io.Resource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -58,7 +62,9 @@ public class AdminApprovalController {
     public ApiResponse<AdminApplicationResponse>
     rejectApplication(
             @PathVariable Long userId,
-            @Valid @RequestBody RejectApplicationRequest request
+            @Valid
+            @RequestBody
+            RejectApplicationRequest request
     ) {
         return ApiResponse.success(
                 "Application rejected successfully",
@@ -67,5 +73,31 @@ public class AdminApprovalController {
                         request
                 )
         );
+    }
+
+    /*
+     * Downloads the complete application details
+     * as a JSON file.
+     */
+    @GetMapping("/{userId}/download")
+    public ResponseEntity<Resource>
+    downloadApplication(
+            @PathVariable Long userId
+    ) {
+        return adminApprovalService
+                .downloadApplication(userId);
+    }
+
+    /*
+     * Downloads the provider's uploaded
+     * identification document.
+     */
+    @GetMapping("/{userId}/documents/id")
+    public ResponseEntity<Resource>
+    downloadIdDocument(
+            @PathVariable Long userId
+    ) {
+        return adminApprovalService
+                .downloadIdDocument(userId);
     }
 }

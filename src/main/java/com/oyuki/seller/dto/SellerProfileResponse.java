@@ -7,27 +7,38 @@ import com.oyuki.user.enums.FacialVerificationStatus;
 import java.math.BigDecimal;
 
 public record SellerProfileResponse(
+
         Long id,
         Long userId,
         String fullName,
         String email,
         String phoneNumber,
         AccountStatus accountStatus,
+
         String businessName,
         String bio,
+
         String profileImageUrl,
         String coverImageUrl,
+
         String state,
         String lga,
         String area,
         String addressLine,
+
         BigDecimal latitude,
         BigDecimal longitude,
+
         String idDocumentUrl,
+        String businessDocumentUrl,
+        String cacDocumentUrl,
+
         FacialVerificationStatus facialVerificationStatus,
+
         String bankName,
         String accountName,
         String accountNumber,
+
         boolean profileCompleted
 ) {
 
@@ -41,21 +52,31 @@ public record SellerProfileResponse(
                 profile.getUser().getEmail(),
                 profile.getUser().getPhoneNumber(),
                 profile.getUser().getStatus(),
+
                 profile.getBusinessName(),
                 profile.getBio(),
+
                 profile.getProfileImageUrl(),
                 profile.getCoverImageUrl(),
+
                 profile.getState(),
                 profile.getLga(),
                 profile.getArea(),
                 profile.getAddressLine(),
+
                 profile.getLatitude(),
                 profile.getLongitude(),
+
                 profile.getIdDocumentUrl(),
+                profile.getBusinessDocumentUrl(),
+                profile.getCacDocumentUrl(),
+
                 profile.getFacialVerificationStatus(),
+
                 profile.getBankName(),
                 profile.getAccountName(),
                 profile.getAccountNumber(),
+
                 isComplete(profile)
         );
     }
@@ -63,13 +84,20 @@ public record SellerProfileResponse(
     public static boolean isComplete(
             SellerProfile profile
     ) {
-        return hasText(profile.getProfileImageUrl())
-                && hasText(profile.getIdDocumentUrl());
+        return hasText(profile.getBusinessName())
+                && hasText(profile.getBio())
+                && hasText(profile.getProfileImageUrl())
+                && hasText(profile.getIdDocumentUrl())
+                && hasText(profile.getState())
+                && hasText(profile.getLga())
+                && hasText(profile.getArea())
+                && hasText(profile.getAddressLine());
     }
 
     private static boolean hasText(
             String value
     ) {
-        return value != null && !value.isBlank();
+        return value != null
+                && !value.isBlank();
     }
 }

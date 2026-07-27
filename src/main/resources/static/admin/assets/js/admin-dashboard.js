@@ -1,72 +1,200 @@
 (function () {
   'use strict';
 
-  const Api =
-    window.OyukiAdminApi;
+  /*
+   * Supports both names used by previous admin-api.js versions.
+   */
+  const LoadedApi =
+    window.OyukiAdminApi ||
+    window.AdminApi;
 
-  if (!Api) {
+  if (!LoadedApi) {
     console.error(
-      'admin-api.js did not load.'
+      'admin-api.js did not load or did not create an API object.'
     );
+
+    document
+      .querySelectorAll('.loading-block')
+      .forEach(element => {
+        element.textContent =
+          'Admin API JavaScript did not load.';
+      });
 
     return;
   }
 
+  /*
+   * Normalises the API object so this dashboard works with
+   * both the old and new admin-api.js structures.
+   */
+  const Api = {
+    get(path) {
+      if (
+        typeof LoadedApi.get ===
+        'function'
+      ) {
+        return LoadedApi.get(path);
+      }
+
+      return LoadedApi.request(path);
+    },
+
+    post(path, body) {
+      if (
+        typeof LoadedApi.post ===
+        'function'
+      ) {
+        return LoadedApi.post(
+          path,
+          body
+        );
+      }
+
+      return LoadedApi.request(
+        path,
+        {
+          method: 'POST',
+          body
+        }
+      );
+    },
+
+    put(path, body) {
+      if (
+        typeof LoadedApi.put ===
+        'function'
+      ) {
+        return LoadedApi.put(
+          path,
+          body
+        );
+      }
+
+      return LoadedApi.request(
+        path,
+        {
+          method: 'PUT',
+          body
+        }
+      );
+    },
+
+    patch(path, body) {
+      if (
+        typeof LoadedApi.patch ===
+        'function'
+      ) {
+        return LoadedApi.patch(
+          path,
+          body
+        );
+      }
+
+      return LoadedApi.request(
+        path,
+        {
+          method: 'PATCH',
+          body
+        }
+      );
+    },
+
+    delete(path) {
+      if (
+        typeof LoadedApi.delete ===
+        'function'
+      ) {
+        return LoadedApi.delete(path);
+      }
+
+      return LoadedApi.request(
+        path,
+        {
+          method: 'DELETE'
+        }
+      );
+    }
+  };
+
   const elements = {
     sidebar:
-      document.getElementById('sidebar'),
+      document.getElementById(
+        'sidebar'
+      ),
 
     mobileOverlay:
-      document.getElementById('mobileOverlay'),
+      document.getElementById(
+        'mobileOverlay'
+      ),
 
     menuButton:
-      document.getElementById('menuButton'),
+      document.getElementById(
+        'menuButton'
+      ),
 
     logoutButton:
-      document.getElementById('logoutButton'),
+      document.getElementById(
+        'logoutButton'
+      ),
 
     pageTitle:
-      document.getElementById('pageTitle'),
+      document.getElementById(
+        'pageTitle'
+      ),
 
     adminName:
-      document.getElementById('adminName'),
+      document.getElementById(
+        'adminName'
+      ),
 
     adminInitial:
-      document.getElementById('adminInitial'),
+      document.getElementById(
+        'adminInitial'
+      ),
 
     globalAlert:
-      document.getElementById('globalAlert'),
+      document.getElementById(
+        'globalAlert'
+      ),
 
     modal:
-      document.getElementById('modal'),
+      document.getElementById(
+        'modal'
+      ),
 
     modalClose:
-      document.getElementById('modalClose'),
+      document.getElementById(
+        'modalClose'
+      ),
 
     modalContent:
-      document.getElementById('modalContent')
+      document.getElementById(
+        'modalContent'
+      )
   };
 
   function escapeHtml(value) {
-    return String(value ?? '').replace(
-      /[&<>'"]/g,
-      character => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        "'": '&#39;',
-        '"': '&quot;'
-      })[character]
-    );
+    return String(value ?? '')
+      .replace(
+        /[&<>'"]/g,
+        character => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;'
+        })[character]
+      );
   }
 
   function unwrap(payload) {
     if (
       payload &&
-      Object.prototype.hasOwnProperty.call(
-        payload,
-        'data'
-      )
+      Object.prototype
+        .hasOwnProperty.call(
+          payload,
+          'data'
+        )
     ) {
       return payload.data;
     }
@@ -75,30 +203,59 @@
   }
 
   function arrayFrom(payload) {
-    const value = unwrap(payload);
+    const value =
+      unwrap(payload);
 
     if (Array.isArray(value)) {
       return value;
     }
 
-    if (Array.isArray(value?.content)) {
+    if (
+      Array.isArray(
+        value?.content
+      )
+    ) {
       return value.content;
     }
 
-    if (Array.isArray(value?.items)) {
+    if (
+      Array.isArray(
+        value?.items
+      )
+    ) {
       return value.items;
     }
 
-    if (Array.isArray(value?.users)) {
+    if (
+      Array.isArray(
+        value?.users
+      )
+    ) {
       return value.users;
     }
 
-    if (Array.isArray(value?.orders)) {
+    if (
+      Array.isArray(
+        value?.orders
+      )
+    ) {
       return value.orders;
     }
 
-    if (Array.isArray(value?.payments)) {
+    if (
+      Array.isArray(
+        value?.payments
+      )
+    ) {
       return value.payments;
+    }
+
+    if (
+      Array.isArray(
+        value?.applications
+      )
+    ) {
+      return value.applications;
     }
 
     return [];
@@ -109,18 +266,19 @@
       return '—';
     }
 
-    const date =
+    const parsedDate =
       new Date(value);
 
     if (
       Number.isNaN(
-        date.getTime()
+        parsedDate.getTime()
       )
     ) {
       return escapeHtml(value);
     }
 
-    return date.toLocaleString();
+    return parsedDate
+      .toLocaleString();
   }
 
   function formatMoney(value) {
@@ -141,20 +299,16 @@
 
   function badge(status) {
     const value =
-      String(status || 'UNKNOWN');
+      String(
+        status || 'UNKNOWN'
+      );
 
     return `
-      <span class="status-badge status-${statusClass(value)}">
+      <span
+        class="status-badge status-${statusClass(value)}"
+      >
         ${escapeHtml(value)}
       </span>
-    `;
-  }
-
-  function emptyState(message) {
-    return `
-      <div class="empty-state">
-        ${escapeHtml(message)}
-      </div>
     `;
   }
 
@@ -162,6 +316,14 @@
     return `
       <div class="loading-block">
         Loading…
+      </div>
+    `;
+  }
+
+  function emptyState(message) {
+    return `
+      <div class="empty-state">
+        ${escapeHtml(message)}
       </div>
     `;
   }
@@ -183,10 +345,13 @@
     elements.globalAlert.hidden =
       false;
 
-    setTimeout(() => {
-      elements.globalAlert.hidden =
-        true;
-    }, 4500);
+    window.setTimeout(
+      () => {
+        elements.globalAlert.hidden =
+          true;
+      },
+      4500
+    );
   }
 
   function showError(error) {
@@ -236,9 +401,11 @@
       'true'
     );
 
-    if (elements.modalContent) {
-      elements.modalContent.innerHTML =
-        '';
+    if (
+      elements.modalContent
+    ) {
+      elements.modalContent
+        .innerHTML = '';
     }
 
     document.body.classList.remove(
@@ -246,25 +413,27 @@
     );
   }
 
-  function closeMobileMenu() {
-    elements.sidebar?.classList.remove(
-      'open'
-    );
+  function openMobileMenu() {
+    elements.sidebar
+      ?.classList.add('open');
 
-    if (elements.mobileOverlay) {
+    if (
+      elements.mobileOverlay
+    ) {
       elements.mobileOverlay.hidden =
-        true;
+        false;
     }
   }
 
-  function openMobileMenu() {
-    elements.sidebar?.classList.add(
-      'open'
-    );
+  function closeMobileMenu() {
+    elements.sidebar
+      ?.classList.remove('open');
 
-    if (elements.mobileOverlay) {
+    if (
+      elements.mobileOverlay
+    ) {
       elements.mobileOverlay.hidden =
-        false;
+        true;
     }
   }
 
@@ -292,8 +461,9 @@
     if (
       !token ||
       !user ||
-      String(user.role || '')
-        .toUpperCase() !==
+      String(
+        user.role || ''
+      ).toUpperCase() !==
         'ADMIN'
     ) {
       window.location.replace(
@@ -306,23 +476,33 @@
     return user;
   }
 
-  function initialiseAdminName(user) {
+  function initialiseAdminName(
+    user
+  ) {
     const name =
       user?.fullName ||
       'Oyuki Administrator';
 
-    if (elements.adminName) {
+    if (
+      elements.adminName
+    ) {
       elements.adminName.textContent =
         name;
     }
 
-    if (elements.adminInitial) {
+    if (
+      elements.adminInitial
+    ) {
       elements.adminInitial.textContent =
-        name.charAt(0).toUpperCase();
+        name
+          .charAt(0)
+          .toUpperCase();
     }
   }
 
-  function showSection(sectionName) {
+  function showSection(
+    sectionName
+  ) {
     document
       .querySelectorAll(
         '.page-section'
@@ -330,7 +510,8 @@
       .forEach(section => {
         section.classList.toggle(
           'active',
-          section.id === sectionName
+          section.id ===
+            sectionName
         );
       });
 
@@ -346,17 +527,20 @@
         );
       });
 
-    const names = {
+    const titles = {
       overview: 'Overview',
-      applications: 'Applications',
+      applications:
+        'Applications',
       users: 'Users',
       orders: 'Orders',
       payments: 'Payments'
     };
 
-    if (elements.pageTitle) {
+    if (
+      elements.pageTitle
+    ) {
       elements.pageTitle.textContent =
-        names[sectionName] ||
+        titles[sectionName] ||
         'Overview';
     }
 
@@ -369,20 +553,34 @@
       loadApplications();
     }
 
-    if (sectionName === 'users') {
+    if (
+      sectionName ===
+      'users'
+    ) {
       loadUsers();
     }
 
-    if (sectionName === 'orders') {
+    if (
+      sectionName ===
+      'orders'
+    ) {
       loadOrders();
     }
 
-    if (sectionName === 'payments') {
+    if (
+      sectionName ===
+      'payments'
+    ) {
       loadPayments();
     }
   }
 
   async function loadStatistics() {
+    const totalElement =
+      document.getElementById(
+        'totalUsers'
+      );
+
     try {
       const payload =
         unwrap(
@@ -395,24 +593,21 @@
         Number(
           payload?.totalUsers ??
           payload?.total ??
+          payload?.users ??
           0
         );
 
-      const element =
-        document.getElementById(
-          'totalUsers'
-        );
-
-      if (element) {
-        element.textContent =
+      if (totalElement) {
+        totalElement.textContent =
           total.toLocaleString();
       }
 
       return total;
     } catch (error) {
-      document.getElementById(
-        'totalUsers'
-      ).textContent = '0';
+      if (totalElement) {
+        totalElement.textContent =
+          '0';
+      }
 
       console.warn(
         'Unable to load user statistics:',
@@ -436,6 +631,11 @@
 
     if (table) {
       table.innerHTML =
+        loadingState();
+    }
+
+    if (overview) {
+      overview.innerHTML =
         loadingState();
     }
 
@@ -475,36 +675,41 @@
           count
             ? applications
                 .slice(0, 4)
-                .map(application => `
-                  <div class="list-item">
-                    <div>
-                      <h3>
-                        ${escapeHtml(
-                          application.fullName ||
-                          application.businessName ||
-                          application.ownerName ||
-                          'Provider'
-                        )}
-                      </h3>
+                .map(
+                  application => `
+                    <div class="list-item">
+                      <div>
+                        <h3>
+                          ${escapeHtml(
+                            application.fullName ||
+                            application.businessName ||
+                            application.ownerName ||
+                            'Provider'
+                          )}
+                        </h3>
 
-                      <p>
-                        ${escapeHtml(
-                          application.role ||
-                          application.providerType ||
-                          'PROVIDER'
-                        )}
-                      </p>
+                        <p>
+                          ${escapeHtml(
+                            application.role ||
+                            application.providerType ||
+                            'PROVIDER'
+                          )}
+                        </p>
+                      </div>
+
+                      <button
+                        class="secondary-button small"
+                        type="button"
+                        data-view-application="${
+                          application.userId ||
+                          application.id
+                        }"
+                      >
+                        Review
+                      </button>
                     </div>
-
-                    <button
-                      class="secondary-button small"
-                      type="button"
-                      data-view-application="${application.userId || application.id}"
-                    >
-                      Review
-                    </button>
-                  </div>
-                `)
+                  `
+                )
                 .join('')
             : emptyState(
                 'No pending applications.'
@@ -539,56 +744,61 @@
 
           <tbody>
             ${applications
-              .map(application => `
-                <tr>
-                  <td>
-                    ${escapeHtml(
-                      application.fullName ||
-                      application.businessName ||
-                      'Provider'
-                    )}
-                  </td>
+              .map(
+                application => `
+                  <tr>
+                    <td>
+                      ${escapeHtml(
+                        application.fullName ||
+                        application.businessName ||
+                        'Provider'
+                      )}
+                    </td>
 
-                  <td>
-                    ${escapeHtml(
-                      application.role ||
-                      application.providerType ||
-                      'PROVIDER'
-                    )}
-                  </td>
+                    <td>
+                      ${escapeHtml(
+                        application.role ||
+                        application.providerType ||
+                        'PROVIDER'
+                      )}
+                    </td>
 
-                  <td>
-                    ${escapeHtml(
-                      application.email ||
-                      '—'
-                    )}
-                  </td>
+                    <td>
+                      ${escapeHtml(
+                        application.email ||
+                        '—'
+                      )}
+                    </td>
 
-                  <td>
-                    ${escapeHtml(
-                      application.phoneNumber ||
-                      '—'
-                    )}
-                  </td>
+                    <td>
+                      ${escapeHtml(
+                        application.phoneNumber ||
+                        '—'
+                      )}
+                    </td>
 
-                  <td>
-                    ${badge(
-                      application.status ||
-                      'PENDING_APPROVAL'
-                    )}
-                  </td>
+                    <td>
+                      ${badge(
+                        application.status ||
+                        'PENDING_APPROVAL'
+                      )}
+                    </td>
 
-                  <td>
-                    <button
-                      class="secondary-button small"
-                      type="button"
-                      data-view-application="${application.userId || application.id}"
-                    >
-                      Review
-                    </button>
-                  </td>
-                </tr>
-              `)
+                    <td>
+                      <button
+                        class="secondary-button small"
+                        type="button"
+                        data-view-application="${
+                          application.userId ||
+                          application.id
+                        }"
+                      >
+                        Review
+                      </button>
+                    </td>
+                  </tr>
+                `
+              )
               .join('')}
           </tbody>
         </table>
@@ -610,9 +820,15 @@
           );
       }
 
-      document.getElementById(
-        'pendingApplications'
-      ).textContent = '0';
+      const pendingElement =
+        document.getElementById(
+          'pendingApplications'
+        );
+
+      if (pendingElement) {
+        pendingElement.textContent =
+          '0';
+      }
 
       showError(error);
 
@@ -620,129 +836,38 @@
     }
   }
 
-  async function openApplication(
-    userId
-  ) {
+  async function openApplication(userId) {
     try {
+      openModal(`<h2 id="modalTitle">Loading application…</h2>${loadingState()}`);
+      const a = unwrap(await Api.get(`/admin/applications/${userId}`));
+      const mediaUrl=value=>{if(!value)return null;if(/^https?:\/\//i.test(value))return value;if(value.startsWith('/uploads/'))return `https://illustrious-nurturing-production-8169.up.railway.app${value}`;return value};
+      const picture=(label,value)=>value?`<div class="application-media"><span>${label}</span><a href="${escapeHtml(mediaUrl(value))}" target="_blank" rel="noopener"><img src="${escapeHtml(mediaUrl(value))}" alt="${label}"></a></div>`:'';
+      const gallery=Array.isArray(a.kitchenImages)?a.kitchenImages:[];
+      const details=[['Full name',a.fullName],['Provider type',a.role],['Business/Kitchen name',a.businessName],['Cuisine',a.cuisine],['Email',a.email],['Phone',a.phoneNumber],['Account status',a.accountStatus],['State',a.state],['LGA',a.lga],['Area',a.area],['Full address',a.addressLine],['Latitude',a.latitude],['Longitude',a.longitude],['Facial verification',a.facialVerificationStatus],['Bank',a.bankName],['Account name',a.accountName],['Account number',a.accountNumber],['Registered',formatDate(a.registeredAt)],['Profile submitted',formatDate(a.profileSubmittedAt)],['Profile complete',a.profileCompleted?'Yes':'No']];
       openModal(`
-        <h2 id="modalTitle">
-          Loading application…
-        </h2>
-
-        ${loadingState()}
-      `);
-
-      const application =
-        unwrap(
-          await Api.get(
-            `/admin/applications/${userId}`
-          )
-        );
-
-      openModal(`
-        <h2 id="modalTitle">
-          Provider application
-        </h2>
-
-        <div class="modal-detail-grid">
-
-          <div class="modal-detail">
-            <span>Name</span>
-            <strong>
-              ${escapeHtml(
-                application.fullName ||
-                application.businessName ||
-                '—'
-              )}
-            </strong>
-          </div>
-
-          <div class="modal-detail">
-            <span>Role</span>
-            <strong>
-              ${escapeHtml(
-                application.role ||
-                application.providerType ||
-                '—'
-              )}
-            </strong>
-          </div>
-
-          <div class="modal-detail">
-            <span>Email</span>
-            <strong>
-              ${escapeHtml(
-                application.email ||
-                '—'
-              )}
-            </strong>
-          </div>
-
-          <div class="modal-detail">
-            <span>Phone</span>
-            <strong>
-              ${escapeHtml(
-                application.phoneNumber ||
-                '—'
-              )}
-            </strong>
-          </div>
-
-          <div class="modal-detail">
-            <span>Status</span>
-            <strong>
-              ${escapeHtml(
-                application.status ||
-                'PENDING_APPROVAL'
-              )}
-            </strong>
-          </div>
-
-          <div class="modal-detail">
-            <span>Created</span>
-            <strong>
-              ${formatDate(
-                application.createdAt
-              )}
-            </strong>
-          </div>
-
+        <h2 id="modalTitle">Provider application</h2>
+        <div class="modal-detail-grid">${details.map(([k,v])=>`<div class="modal-detail"><span>${escapeHtml(k)}</span><strong>${escapeHtml(v??'—')}</strong></div>`).join('')}</div>
+        <div class="application-bio"><span>About the business</span><p>${escapeHtml(a.bio||'No bio provided.')}</p></div>
+        <div class="application-media-grid">${picture('Profile picture',a.profileImageUrl)}${picture('Cover picture',a.coverImageUrl)}</div>
+        ${gallery.length?`<h3 class="application-heading">Kitchen pictures</h3><div class="application-gallery">${gallery.map(img=>`<a href="${escapeHtml(mediaUrl(img.imageUrl))}" target="_blank" rel="noopener"><img src="${escapeHtml(mediaUrl(img.imageUrl))}" alt="${escapeHtml(img.caption||'Kitchen picture')}"><small>${escapeHtml(img.caption||'Kitchen picture')}</small></a>`).join('')}</div>`:''}
+        <h3 class="application-heading">Downloads</h3>
+        <div class="table-actions">
+          <button class="secondary-button" data-download-application="${userId}"><i class="bi bi-download"></i> Download full application</button>
+          ${a.idDocumentUrl?`<button class="secondary-button" data-download-id="${userId}"><i class="bi bi-file-earmark-arrow-down"></i> Download ID</button>`:''}
         </div>
-
-        <div class="modal-actions">
-
-          <button
-            class="danger-button"
-            type="button"
-            data-reject-application="${userId}"
-          >
-            Reject
-          </button>
-
-          <button
-            class="success-button"
-            type="button"
-            data-approve-application="${userId}"
-          >
-            Approve
-          </button>
-
-        </div>
-      `);
-    } catch (error) {
-      closeModal();
-      showError(error);
-    }
+        <div class="modal-actions"><button class="danger-button" data-reject-application="${userId}">Reject</button><button class="success-button" data-approve-application="${userId}">Approve</button></div>`);
+    } catch (error) { closeModal(); showError(error); }
   }
 
   async function approveApplication(
     userId
   ) {
-    if (
-      !window.confirm(
+    const confirmed =
+      window.confirm(
         'Approve this provider application?'
-      )
-    ) {
+      );
+
+    if (!confirmed) {
       return;
     }
 
@@ -759,7 +884,7 @@
       );
 
       await loadApplications();
-      await loadOverview();
+      await loadStatistics();
     } catch (error) {
       showError(error);
     }
@@ -837,7 +962,7 @@
       );
 
       await loadApplications();
-      await loadOverview();
+      await loadStatistics();
     } catch (error) {
       showError(error);
     }
@@ -882,15 +1007,24 @@
       new URLSearchParams();
 
     if (search) {
-      params.set('search', search);
+      params.set(
+        'search',
+        search
+      );
     }
 
     if (role) {
-      params.set('role', role);
+      params.set(
+        'role',
+        role
+      );
     }
 
     if (status) {
-      params.set('status', status);
+      params.set(
+        'status',
+        status
+      );
     }
 
     try {
@@ -930,57 +1064,69 @@
 
           <tbody>
             ${users
-              .map(user => `
-                <tr>
-                  <td>
-                    ${escapeHtml(
-                      user.fullName ||
-                      'User'
-                    )}
-                  </td>
+              .map(
+                user => `
+                  <tr>
+                    <td>
+                      ${escapeHtml(
+                        user.fullName ||
+                        'User'
+                      )}
+                    </td>
 
-                  <td>
-                    ${escapeHtml(
-                      user.email ||
-                      user.phoneNumber ||
-                      '—'
-                    )}
-                  </td>
+                    <td>
+                      ${escapeHtml(
+                        user.email ||
+                        user.phoneNumber ||
+                        '—'
+                      )}
+                    </td>
 
-                  <td>
-                    ${escapeHtml(
-                      user.role ||
-                      'CUSTOMER'
-                    )}
-                  </td>
+                    <td>
+                      ${escapeHtml(
+                        user.role ||
+                        'CUSTOMER'
+                      )}
+                    </td>
 
-                  <td>
-                    ${badge(
-                      user.status ||
-                      user.accountStatus ||
-                      'UNKNOWN'
-                    )}
-                  </td>
+                    <td>
+                      ${badge(
+                        user.status ||
+                        user.accountStatus ||
+                        'UNKNOWN'
+                      )}
+                    </td>
 
-                  <td>
-                    ${formatDate(
-                      user.createdAt
-                    )}
-                  </td>
+                    <td>
+                      ${formatDate(
+                        user.createdAt
+                      )}
+                    </td>
 
-                  <td>
-                    <button
-                      class="secondary-button small"
-                      type="button"
-                      data-manage-user="${user.id || user.userId}"
-                      data-user-name="${escapeHtml(user.fullName || 'User')}"
-                      data-user-status="${escapeHtml(user.status || user.accountStatus || '')}"
-                    >
-                      Manage
-                    </button>
-                  </td>
-                </tr>
-              `)
+                    <td>
+                      <button
+                        class="secondary-button small"
+                        type="button"
+                        data-manage-user="${
+                          user.id ||
+                          user.userId
+                        }"
+                        data-user-name="${escapeHtml(
+                          user.fullName ||
+                          'User'
+                        )}"
+                        data-user-status="${escapeHtml(
+                          user.status ||
+                          user.accountStatus ||
+                          ''
+                        )}"
+                      >
+                        Manage
+                      </button>
+                    </td>
+                  </tr>
+                `
+              )
               .join('')}
           </tbody>
         </table>
@@ -999,7 +1145,9 @@
     }
   }
 
-  function openUserManager(button) {
+  function openUserManager(
+    button
+  ) {
     const userId =
       button.dataset.manageUser;
 
@@ -1021,25 +1169,67 @@
       </label>
 
       <select id="newUserStatus">
-        <option value="ACTIVE" ${currentStatus === 'ACTIVE' ? 'selected' : ''}>
+
+        <option
+          value="ACTIVE"
+          ${
+            currentStatus ===
+            'ACTIVE'
+              ? 'selected'
+              : ''
+          }
+        >
           ACTIVE
         </option>
 
-        <option value="SUSPENDED" ${currentStatus === 'SUSPENDED' ? 'selected' : ''}>
+        <option
+          value="SUSPENDED"
+          ${
+            currentStatus ===
+            'SUSPENDED'
+              ? 'selected'
+              : ''
+          }
+        >
           SUSPENDED
         </option>
 
-        <option value="DISABLED" ${currentStatus === 'DISABLED' ? 'selected' : ''}>
+        <option
+          value="DISABLED"
+          ${
+            currentStatus ===
+            'DISABLED'
+              ? 'selected'
+              : ''
+          }
+        >
           DISABLED
         </option>
 
-        <option value="REJECTED" ${currentStatus === 'REJECTED' ? 'selected' : ''}>
+        <option
+          value="REJECTED"
+          ${
+            currentStatus ===
+            'REJECTED'
+              ? 'selected'
+              : ''
+          }
+        >
           REJECTED
         </option>
 
-        <option value="PENDING_APPROVAL" ${currentStatus === 'PENDING_APPROVAL' ? 'selected' : ''}>
+        <option
+          value="PENDING_APPROVAL"
+          ${
+            currentStatus ===
+            'PENDING_APPROVAL'
+              ? 'selected'
+              : ''
+          }
+        >
           PENDING_APPROVAL
         </option>
+
       </select>
 
       <label
@@ -1080,9 +1270,11 @@
     userId
   ) {
     const status =
-      document.getElementById(
-        'newUserStatus'
-      )?.value;
+      document
+        .getElementById(
+          'newUserStatus'
+        )
+        ?.value;
 
     const reason =
       document
@@ -1090,7 +1282,8 @@
           'userStatusReason'
         )
         ?.value
-        .trim() || null;
+        .trim() ||
+      null;
 
     try {
       await Api.patch(
@@ -1130,6 +1323,11 @@
         loadingState();
     }
 
+    if (overview) {
+      overview.innerHTML =
+        loadingState();
+    }
+
     try {
       const orders =
         arrayFrom(
@@ -1145,7 +1343,8 @@
 
       if (totalElement) {
         totalElement.textContent =
-          orders.length.toLocaleString();
+          orders.length
+            .toLocaleString();
       }
 
       if (overview) {
@@ -1153,36 +1352,41 @@
           orders.length
             ? orders
                 .slice(0, 5)
-                .map(order => `
-                  <div class="list-item">
-                    <div>
-                      <h3>
-                        Order #${escapeHtml(
-                          order.orderNumber ||
-                          order.id
-                        )}
-                      </h3>
+                .map(
+                  order => `
+                    <div class="list-item">
+                      <div>
+                        <h3>
+                          Order #${escapeHtml(
+                            order.orderNumber ||
+                            order.id
+                          )}
+                        </h3>
 
-                      <p>
-                        ${escapeHtml(
-                          order.customerName ||
-                          order.customer?.fullName ||
-                          'Customer'
-                        )}
-                        ·
-                        ${formatMoney(
-                          order.totalAmount ||
-                          order.total
-                        )}
-                      </p>
+                        <p>
+                          ${escapeHtml(
+                            order.customerName ||
+                            order.customer
+                              ?.fullName ||
+                            'Customer'
+                          )}
+
+                          ·
+
+                          ${formatMoney(
+                            order.totalAmount ||
+                            order.total
+                          )}
+                        </p>
+                      </div>
+
+                      ${badge(
+                        order.status ||
+                        'PENDING'
+                      )}
                     </div>
-
-                    ${badge(
-                      order.status ||
-                      'PENDING'
-                    )}
-                  </div>
-                `)
+                  `
+                )
                 .join('')
             : emptyState(
                 'No orders found.'
@@ -1216,44 +1420,47 @@
 
           <tbody>
             ${orders
-              .map(order => `
-                <tr>
-                  <td>
-                    #${escapeHtml(
-                      order.orderNumber ||
-                      order.id
-                    )}
-                  </td>
+              .map(
+                order => `
+                  <tr>
+                    <td>
+                      #${escapeHtml(
+                        order.orderNumber ||
+                        order.id
+                      )}
+                    </td>
 
-                  <td>
-                    ${escapeHtml(
-                      order.customerName ||
-                      order.customer?.fullName ||
-                      'Customer'
-                    )}
-                  </td>
+                    <td>
+                      ${escapeHtml(
+                        order.customerName ||
+                        order.customer
+                          ?.fullName ||
+                        'Customer'
+                      )}
+                    </td>
 
-                  <td>
-                    ${formatMoney(
-                      order.totalAmount ||
-                      order.total
-                    )}
-                  </td>
+                    <td>
+                      ${formatMoney(
+                        order.totalAmount ||
+                        order.total
+                      )}
+                    </td>
 
-                  <td>
-                    ${badge(
-                      order.status ||
-                      'PENDING'
-                    )}
-                  </td>
+                    <td>
+                      ${badge(
+                        order.status ||
+                        'PENDING'
+                      )}
+                    </td>
 
-                  <td>
-                    ${formatDate(
-                      order.createdAt
-                    )}
-                  </td>
-                </tr>
-              `)
+                    <td>
+                      ${formatDate(
+                        order.createdAt
+                      )}
+                    </td>
+                  </tr>
+                `
+              )
               .join('')}
           </tbody>
         </table>
@@ -1275,9 +1482,15 @@
           );
       }
 
-      document.getElementById(
-        'totalOrders'
-      ).textContent = '0';
+      const totalElement =
+        document.getElementById(
+          'totalOrders'
+        );
+
+      if (totalElement) {
+        totalElement.textContent =
+          '0';
+      }
 
       showError(error);
 
@@ -1298,15 +1511,19 @@
     table.innerHTML =
       loadingState();
 
-    const status =
-      document.getElementById(
-        'paymentStatus'
-      )?.value || '';
+    const selectedStatus =
+      document
+        .getElementById(
+          'paymentStatus'
+        )
+        ?.value || '';
 
     try {
       const suffix =
-        status
-          ? `?status=${encodeURIComponent(status)}`
+        selectedStatus
+          ? `?status=${encodeURIComponent(
+              selectedStatus
+            )}`
           : '';
 
       const payments =
@@ -1317,12 +1534,12 @@
         );
 
       const pending =
-        payments.filter(payment =>
-          String(
-            payment.status ||
-            ''
-          ).toUpperCase() ===
-          'PENDING'
+        payments.filter(
+          payment =>
+            String(
+              payment.status || ''
+            ).toUpperCase() ===
+            'PENDING'
         ).length;
 
       const pendingElement =
@@ -1359,66 +1576,69 @@
 
           <tbody>
             ${payments
-              .map(payment => `
-                <tr>
-                  <td>
-                    #${escapeHtml(
-                      payment.id
-                    )}
-                  </td>
+              .map(
+                payment => `
+                  <tr>
+                    <td>
+                      #${escapeHtml(
+                        payment.id
+                      )}
+                    </td>
 
-                  <td>
-                    #${escapeHtml(
-                      payment.orderId ||
-                      payment.order?.id ||
-                      '—'
-                    )}
-                  </td>
+                    <td>
+                      #${escapeHtml(
+                        payment.orderId ||
+                        payment.order?.id ||
+                        '—'
+                      )}
+                    </td>
 
-                  <td>
-                    ${escapeHtml(
-                      payment.customerName ||
-                      payment.user?.fullName ||
-                      'Customer'
-                    )}
-                  </td>
+                    <td>
+                      ${escapeHtml(
+                        payment.customerName ||
+                        payment.user
+                          ?.fullName ||
+                        'Customer'
+                      )}
+                    </td>
 
-                  <td>
-                    ${formatMoney(
-                      payment.amount
-                    )}
-                  </td>
+                    <td>
+                      ${formatMoney(
+                        payment.amount
+                      )}
+                    </td>
 
-                  <td>
-                    ${badge(
-                      payment.status ||
-                      'PENDING'
-                    )}
-                  </td>
+                    <td>
+                      ${badge(
+                        payment.status ||
+                        'PENDING'
+                      )}
+                    </td>
 
-                  <td>
-                    <div class="table-actions">
+                    <td>
+                      <div class="table-actions">
 
-                      <button
-                        class="success-button small"
-                        type="button"
-                        data-confirm-payment="${payment.id}"
-                      >
-                        Confirm
-                      </button>
+                        <button
+                          class="success-button small"
+                          type="button"
+                          data-confirm-payment="${payment.id}"
+                        >
+                          Confirm
+                        </button>
 
-                      <button
-                        class="danger-button small"
-                        type="button"
-                        data-reject-payment="${payment.id}"
-                      >
-                        Reject
-                      </button>
+                        <button
+                          class="danger-button small"
+                          type="button"
+                          data-reject-payment="${payment.id}"
+                        >
+                          Reject
+                        </button>
 
-                    </div>
-                  </td>
-                </tr>
-              `)
+                      </div>
+                    </td>
+                  </tr>
+                `
+              )
               .join('')}
           </tbody>
         </table>
@@ -1431,9 +1651,15 @@
           error.message
         );
 
-      document.getElementById(
-        'pendingPayments'
-      ).textContent = '0';
+      const pendingElement =
+        document.getElementById(
+          'pendingPayments'
+        );
+
+      if (pendingElement) {
+        pendingElement.textContent =
+          '0';
+      }
 
       showError(error);
 
@@ -1444,11 +1670,12 @@
   async function confirmPayment(
     paymentId
   ) {
-    if (
-      !window.confirm(
+    const confirmed =
+      window.confirm(
         'Confirm this payment?'
-      )
-    ) {
+      );
+
+    if (!confirmed) {
       return;
     }
 
@@ -1616,7 +1843,7 @@
 
     document.addEventListener(
       'click',
-      event => {
+      async event => {
         const navButton =
           event.target.closest(
             '[data-section]'
@@ -1650,7 +1877,8 @@
 
         if (viewApplication) {
           openApplication(
-            viewApplication.dataset
+            viewApplication
+              .dataset
               .viewApplication
           );
 
@@ -1664,7 +1892,8 @@
 
         if (approveButton) {
           approveApplication(
-            approveButton.dataset
+            approveButton
+              .dataset
               .approveApplication
           );
 
@@ -1678,7 +1907,8 @@
 
         if (rejectButton) {
           showRejectApplication(
-            rejectButton.dataset
+            rejectButton
+              .dataset
               .rejectApplication
           );
 
@@ -1722,7 +1952,8 @@
 
         if (saveUser) {
           saveUserStatus(
-            saveUser.dataset
+            saveUser
+              .dataset
               .saveUserStatus
           );
 
@@ -1778,13 +2009,13 @@
           return;
         }
 
-        if (
-          event.target.closest(
-            '[data-close-modal]'
-          )
-        ) {
-          closeModal();
-        }
+        const appDownload = event.target.closest('[data-download-application]');
+        if (appDownload) { try { await LoadedApi.downloadFile(`/admin/applications/${appDownload.dataset.downloadApplication}/download`, `oyuki-application-${appDownload.dataset.downloadApplication}.json`); } catch (error) { showError(error); } return; }
+
+        const idDownload = event.target.closest('[data-download-id]');
+        if (idDownload) { try { await LoadedApi.downloadFile(`/admin/applications/${idDownload.dataset.downloadId}/documents/id`, `provider-id-${idDownload.dataset.downloadId}`); } catch (error) { showError(error); } return; }
+
+        if (event.target.closest('[data-close-modal]')) { closeModal(); }
       }
     );
 

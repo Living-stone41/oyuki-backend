@@ -1,48 +1,22 @@
 (function(){
   'use strict';
   const API_BASE_URL='https://illustrious-nurturing-production-8169.up.railway.app/api';
-  const TOKEN_KEY='oyuki_token';
-  const USER_KEY='oyuki_user';
-
-  function readUser(){try{return JSON.parse(localStorage.getItem(USER_KEY)||'null')}catch{return null}}
-  function unwrap(payload){return payload&&Object.prototype.hasOwnProperty.call(payload,'data')?payload.data:payload}
-  function message(payload,fallback){if(!payload)return fallback;if(typeof payload==='string')return payload;return payload.message||payload.rootMessage||payload.error||fallback}
-
+  const TOKEN_KEY='oyuki_token', USER_KEY='oyuki_user';
+  const readUser=()=>{try{return JSON.parse(localStorage.getItem(USER_KEY)||'null')}catch{return null}};
+  const unwrap=p=>p&&Object.prototype.hasOwnProperty.call(p,'data')?p.data:p;
+  const message=(p,f)=>!p?f:typeof p==='string'?p:(p.message||p.rootMessage||p.error||f);
   async function request(path,{method='GET',body,auth=true,raw=false}={}){
-    const headers={Accept:'application/json'};
-    const token=localStorage.getItem(TOKEN_KEY);
+    const headers={Accept:'application/json'},token=localStorage.getItem(TOKEN_KEY);
     if(auth&&token)headers.Authorization=`Bearer ${token}`;
-    let requestBody=body;
-    if(body!==undefined&&body!==null&&!(body instanceof FormData)){headers['Content-Type']='application/json';requestBody=JSON.stringify(body)}
-    let response;
-    try{response=await fetch(`${API_BASE_URL}${path}`,{method,headers,body:requestBody})}
-    catch{throw new Error('Cannot reach the Oyuki backend. Check the Railway deployment and internet connection.')}
+    let payload=body;if(body!==undefined&&body!==null&&!(body instanceof FormData)){headers['Content-Type']='application/json';payload=JSON.stringify(body)}
+    let response;try{response=await fetch(`${API_BASE_URL}${path}`,{method,headers,body:payload})}catch{throw new Error('Cannot reach the Oyuki backend.')}
     if(raw){if(!response.ok)throw new Error(`Request failed (${response.status})`);return response}
-    const text=await response.text();let payload=null;
-    if(text){try{payload=JSON.parse(text)}catch{payload=text}}
-    if(!response.ok){if(response.status===401||response.status===403){if(auth){localStorage.removeItem(TOKEN_KEY);localStorage.removeItem(USER_KEY)}}throw new Error(message(payload,`Request failed (${response.status})`))}
-    return unwrap(payload);
+    const text=await response.text();let data=null;if(text){try{data=JSON.parse(text)}catch{data=text}}
+    if(!response.ok){if((response.status===401||response.status===403)&&auth){localStorage.removeItem(TOKEN_KEY);localStorage.removeItem(USER_KEY)}throw new Error(message(data,`Request failed (${response.status})`))}
+    return unwrap(data);
   }
-
-  async function login(identifier,password){
-    const result=await request('/auth/login',{method:'POST',body:{identifier,password},auth:false});
-    if(!result?.token)throw new Error('The server did not return an access token.');
-    if(String(result.role||'').toUpperCase()!=='ADMIN')throw new Error('This account is not an administrator.');
-    const user={id:result.userId,userId:result.userId,fullName:result.fullName,role:result.role,status:result.status};
-    localStorage.setItem(TOKEN_KEY,result.token);localStorage.setItem(USER_KEY,JSON.stringify(user));return user;
-  }
-
-  window.AdminApi={
-  API_BASE_URL,
-  currentUser:readUser,
-  token:()=>localStorage.getItem(TOKEN_KEY),
-  isAdmin:()=>Boolean(localStorage.getItem(TOKEN_KEY)&&String(readUser()?.role||'').toUpperCase()==='ADMIN'),
-  login,
-  logout(){localStorage.removeItem(TOKEN_KEY);localStorage.removeItem(USER_KEY);location.replace('admin-login.html')},
-  request,
-  users:{list:(filters={})=>{const p=new URLSearchParams();Object.entries(filters).forEach(([k,v])=>{if(v!==undefined&&v!==null&&v!=='')p.set(k,v)});return request(`/admin/users${p.toString()?`?${p}`:''}`)},statistics:()=>request('/admin/users/statistics'),updateStatus:(id,status,reason='')=>request(`/admin/users/${id}/status`,{method:'PATCH',body:{status,reason:reason||null}})},
-  applications:{pending:()=>request('/admin/applications/pending'),get:id=>request(`/admin/applications/${id}`),approve:id=>request(`/admin/applications/${id}/approve`,{method:'PATCH',body:{}}),reject:(id,reason)=>request(`/admin/applications/${id}/reject`,{method:'PATCH',body:{reason}})},
-  orders:{list:()=>request('/admin/orders'),get:id=>request(`/admin/orders/${id}`),markReceived:id=>request(`/admin/orders/items/${id}/received`,{method:'PATCH',body:{}})},
-  payments:{list:(status='')=>request(`/admin/payments${status?`?status=${encodeURIComponent(status)}`:''}`),confirm:(id,note='')=>request(`/admin/payments/${id}/confirm`,{method:'PATCH',body:{note:note||null}}),reject:(id,reason)=>request(`/admin/payments/${id}/reject`,{method:'PATCH',body:{reason}}),receipt:async id=>{const r=await request(`/admin/payments/${id}/receipt`,{raw:true});const blob=await r.blob();const url=URL.createObjectURL(blob);window.open(url,'_blank','noopener');setTimeout(()=>URL.revokeObjectURL(url),60000)}}
-};
+  async function login(identifier,password){const r=await request('/auth/login',{method:'POST',body:{identifier,password},auth:false});if(!r?.token)throw new Error('The server did not return an access token.');if(String(r.role||'').toUpperCase()!=='ADMIN')throw new Error('This account is not an administrator.');const u={id:r.userId,userId:r.userId,fullName:r.fullName,role:r.role,status:r.status};localStorage.setItem(TOKEN_KEY,r.token);localStorage.setItem(USER_KEY,JSON.stringify(u));return u}
+  async function downloadFile(path,fallbackName='oyuki-download'){const r=await request(path,{raw:true});const blob=await r.blob();let filename=fallbackName;const d=r.headers.get('Content-Disposition');const m=d&&d.match(/filename="?([^";]+)"?/i);if(m?.[1])filename=m[1];const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+  const api={API_BASE_URL,currentUser:readUser,token:()=>localStorage.getItem(TOKEN_KEY),isAdmin:()=>Boolean(localStorage.getItem(TOKEN_KEY)&&String(readUser()?.role||'').toUpperCase()==='ADMIN'),login,logout(){localStorage.removeItem(TOKEN_KEY);localStorage.removeItem(USER_KEY);location.replace('admin-login.html')},request,get:p=>request(p),post:(p,b)=>request(p,{method:'POST',body:b}),put:(p,b)=>request(p,{method:'PUT',body:b}),patch:(p,b)=>request(p,{method:'PATCH',body:b}),delete:p=>request(p,{method:'DELETE'}),downloadFile};
+  window.AdminApi=api;window.OyukiAdminApi=api;
 })();

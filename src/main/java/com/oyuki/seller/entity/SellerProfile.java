@@ -16,6 +16,20 @@ import java.time.LocalDateTime;
                         name = "uk_seller_profiles_user",
                         columnNames = "user_id"
                 )
+        },
+        indexes = {
+                @Index(
+                        name = "idx_seller_profiles_state",
+                        columnList = "state"
+                ),
+                @Index(
+                        name = "idx_seller_profiles_lga",
+                        columnList = "lga"
+                ),
+                @Index(
+                        name = "idx_seller_profiles_facial_status",
+                        columnList = "facial_verification_status"
+                )
         }
 )
 @Getter
@@ -29,7 +43,10 @@ public class SellerProfile {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @OneToOne(
+            fetch = FetchType.LAZY,
+            optional = false
+    )
     @JoinColumn(
             name = "user_id",
             nullable = false,
@@ -108,11 +125,33 @@ public class SellerProfile {
     )
     private BigDecimal longitude;
 
+    /*
+     * Government-issued identification document,
+     * such as NIN slip, driver's licence or passport.
+     */
     @Column(
             name = "id_document_url",
             length = 500
     )
     private String idDocumentUrl;
+
+    /*
+     * Optional general business registration document.
+     */
+    @Column(
+            name = "business_document_url",
+            length = 500
+    )
+    private String businessDocumentUrl;
+
+    /*
+     * Optional CAC registration document.
+     */
+    @Column(
+            name = "cac_document_url",
+            length = 500
+    )
+    private String cacDocumentUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(
@@ -157,13 +196,44 @@ public class SellerProfile {
 
     @PrePersist
     protected void onCreate() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now =
+                LocalDateTime.now();
+
         createdAt = now;
         updatedAt = now;
+
+        if (facialVerificationStatus == null) {
+            facialVerificationStatus =
+                    FacialVerificationStatus.NOT_SUBMITTED;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt =
+                LocalDateTime.now();
+    }
+
+    public boolean hasRequiredApprovalFiles() {
+        return hasText(profileImageUrl)
+                && hasText(idDocumentUrl);
+    }
+
+    public boolean isProfileComplete() {
+        return hasText(businessName)
+                && hasText(bio)
+                && hasText(profileImageUrl)
+                && hasText(idDocumentUrl)
+                && hasText(state)
+                && hasText(lga)
+                && hasText(area)
+                && hasText(addressLine);
+    }
+
+    private boolean hasText(
+            String value
+    ) {
+        return value != null
+                && !value.isBlank();
     }
 }

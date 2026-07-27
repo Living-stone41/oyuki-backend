@@ -1,5 +1,7 @@
 package com.oyuki.admin.dto;
 
+import com.oyuki.kitchen.dto.KitchenImageResponse;
+import com.oyuki.kitchen.entity.KitchenImage;
 import com.oyuki.kitchen.entity.KitchenProfile;
 import com.oyuki.seller.entity.SellerProfile;
 import com.oyuki.user.entity.User;
@@ -9,6 +11,7 @@ import com.oyuki.user.enums.Role;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record AdminApplicationResponse(
 
@@ -36,11 +39,16 @@ public record AdminApplicationResponse(
         BigDecimal longitude,
 
         String idDocumentUrl,
+        String businessDocumentUrl,
+        String cacDocumentUrl,
+
         FacialVerificationStatus facialVerificationStatus,
 
         String bankName,
         String accountName,
         String accountNumber,
+
+        List<KitchenImageResponse> kitchenImages,
 
         LocalDateTime registeredAt,
         LocalDateTime profileSubmittedAt,
@@ -77,23 +85,39 @@ public record AdminApplicationResponse(
                 profile.getLongitude(),
 
                 profile.getIdDocumentUrl(),
+                profile.getBusinessDocumentUrl(),
+                profile.getCacDocumentUrl(),
+
                 profile.getFacialVerificationStatus(),
 
                 profile.getBankName(),
                 profile.getAccountName(),
                 profile.getAccountNumber(),
 
+                List.of(),
+
                 user.getCreatedAt(),
                 profile.getCreatedAt(),
+
                 hasText(profile.getProfileImageUrl())
                         && hasText(profile.getIdDocumentUrl())
+                        && hasText(profile.getBusinessName())
+                        && hasText(profile.getAddressLine())
         );
     }
 
     public static AdminApplicationResponse fromKitchen(
-            KitchenProfile profile
+            KitchenProfile profile,
+            List<KitchenImage> kitchenImages
     ) {
         User user = profile.getUser();
+
+        List<KitchenImageResponse> gallery =
+                kitchenImages == null
+                        ? List.of()
+                        : kitchenImages.stream()
+                                .map(KitchenImageResponse::from)
+                                .toList();
 
         return new AdminApplicationResponse(
                 user.getId(),
@@ -120,16 +144,25 @@ public record AdminApplicationResponse(
                 profile.getLongitude(),
 
                 profile.getIdDocumentUrl(),
+                profile.getBusinessDocumentUrl(),
+                profile.getCacDocumentUrl(),
+
                 profile.getFacialVerificationStatus(),
 
                 profile.getBankName(),
                 profile.getAccountName(),
                 profile.getAccountNumber(),
 
+                gallery,
+
                 user.getCreatedAt(),
                 profile.getCreatedAt(),
+
                 hasText(profile.getProfileImageUrl())
                         && hasText(profile.getIdDocumentUrl())
+                        && hasText(profile.getKitchenName())
+                        && hasText(profile.getAddressLine())
+                        && !gallery.isEmpty()
         );
     }
 
@@ -161,11 +194,16 @@ public record AdminApplicationResponse(
                 null,
 
                 null,
+                null,
+                null,
+
                 FacialVerificationStatus.NOT_SUBMITTED,
 
                 null,
                 null,
                 null,
+
+                List.of(),
 
                 user.getCreatedAt(),
                 null,
@@ -176,6 +214,7 @@ public record AdminApplicationResponse(
     private static boolean hasText(
             String value
     ) {
-        return value != null && !value.isBlank();
+        return value != null
+                && !value.isBlank();
     }
 }

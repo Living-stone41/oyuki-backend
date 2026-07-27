@@ -88,6 +88,17 @@ public class KitchenProfile {
 
     @Column(name = "id_document_url", length = 500)
     private String idDocumentUrl;
+    @Column(
+        name = "business_document_url",
+        length = 500
+)
+private String businessDocumentUrl;
+
+@Column(
+        name = "cac_document_url",
+        length = 500
+)
+private String cacDocumentUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(
