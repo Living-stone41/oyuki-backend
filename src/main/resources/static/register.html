@@ -296,6 +296,28 @@
 
           <div class="oy-field">
 
+            <label for="referralCode">
+              Referral code
+              <span class="text-muted">(optional)</span>
+            </label>
+
+            <div class="oy-input-wrap">
+              <i class="bi bi-gift"></i>
+              <input
+                id="referralCode"
+                class="oy-input"
+                name="referralCode"
+                type="text"
+                maxlength="50"
+                placeholder="Enter referral code"
+                autocomplete="off"
+              >
+            </div>
+            <p class="contact-note" id="referralHint">Use a friend's code to receive your welcome reward after verification.</p>
+          </div>
+
+          <div class="oy-field">
+
             <label for="regPassword">
               Password
             </label>
@@ -663,6 +685,16 @@
             ).get('role') || ''
           ).toUpperCase();
 
+        const referralFromUrl =
+          (new URLSearchParams(window.location.search).get('ref') || '').trim();
+
+        const referralInput = document.getElementById('referralCode');
+        if (referralFromUrl && referralInput) {
+          referralInput.value = referralFromUrl.toUpperCase();
+          document.getElementById('referralHint').textContent =
+            'Referral code applied. Your reward will be added after OTP verification.';
+        }
+
         if (
           [
             'CUSTOMER',
@@ -768,6 +800,11 @@
                 'CUSTOMER'
               ).toUpperCase();
 
+            const referralCode =
+              String(formData.get('referralCode') || '')
+                .trim()
+                .toUpperCase();
+
             let otpChannel =
               String(
                 formData.get(
@@ -857,7 +894,8 @@
               password,
               confirmPassword,
               role,
-              otpChannel
+              otpChannel,
+              referralCode: referralCode || null
             };
 
             registerButton.disabled = true;
