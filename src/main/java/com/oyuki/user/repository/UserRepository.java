@@ -44,6 +44,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
     boolean existsByPhoneNumber(String phoneNumber);
 
+    Optional<User> findByReferralCodeIgnoreCase(String referralCode);
+
+    boolean existsByReferralCodeIgnoreCase(String referralCode);
+
     /*
      * Admin can retrieve users by role.
      */

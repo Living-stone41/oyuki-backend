@@ -42,6 +42,9 @@ public record RegisterRequest(
         String confirmPassword,
 
         @NotNull(message = "Account role is required")
-        Role role
+        Role role,
+
+        @Size(max = 50, message = "Referral code is too long")
+        String referralCode
 ) {
 }

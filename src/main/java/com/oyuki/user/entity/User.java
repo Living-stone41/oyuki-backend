@@ -23,6 +23,10 @@ import java.time.LocalDateTime;
                 @UniqueConstraint(
                         name = "uk_users_phone_number",
                         columnNames = "phone_number"
+                ),
+                @UniqueConstraint(
+                        name = "uk_users_referral_code",
+                        columnNames = "referral_code"
                 )
         },
         indexes = {
@@ -132,6 +136,14 @@ public class User {
             length = 500
     )
     private String profileImageUrl;
+
+
+    @Column(
+            name = "referral_code",
+            unique = true,
+            length = 50
+    )
+    private String referralCode;
 
     @Column(
             name = "last_login_at"

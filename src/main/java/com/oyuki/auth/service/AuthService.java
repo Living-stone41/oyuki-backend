@@ -6,6 +6,7 @@ import com.oyuki.auth.entity.VerificationToken;
 import com.oyuki.auth.enums.OtpChannel;
 import com.oyuki.auth.repository.VerificationTokenRepository;
 import com.oyuki.common.util.OtpGenerator;
+import com.oyuki.referral.service.ReferralService;
 import com.oyuki.user.entity.User;
 import com.oyuki.user.enums.AccountStatus;
 import com.oyuki.user.enums.Role;
@@ -45,6 +46,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final OtpGenerator otpGenerator;
     private final OtpDeliveryService otpDeliveryService;
+    private final ReferralService referralService;
 
     /*
      * REGISTER A NEW USER
@@ -95,6 +97,12 @@ public class AuthService {
 
         User savedUser =
                 userRepository.save(user);
+
+        referralService.ensureReferralCode(savedUser);
+        referralService.createPendingReferral(
+                request.referralCode(),
+                savedUser
+        );
 
         String otp =
                 otpGenerator.generateSixDigitOtp();
@@ -280,6 +288,8 @@ public class AuthService {
 
         User verifiedUser =
                 userRepository.save(user);
+
+        referralService.rewardAfterOtpVerification(verifiedUser);
 
         return Map.of(
                 "userId",
