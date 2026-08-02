@@ -316,6 +316,10 @@
       return '/kitchen.html';
     }
 
+    if (value === 'MARKETER') {
+      return '/referrals.html';
+    }
+
     if (value === 'ADMIN') {
       return '/admin.html';
     }

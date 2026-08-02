@@ -1,0 +1,39 @@
+OYUKI REFERRAL AND MARKETER RULES
+===================================
+
+Implemented rules
+-----------------
+1. Normal CUSTOMER, SELLER/FARMER, KITCHEN and RIDER accounts earn NGN 200 for each OTP-verified referral.
+2. MARKETER accounts earn NGN 2,000 only when the referred account is SELLER/FARMER or KITCHEN and completes OTP verification.
+3. Customer and Rider sign-ups made with a marketer code remain visible in referral history but do not earn a marketer reward and do not count toward withdrawal eligibility.
+4. Referral earnings cannot be withdrawn until the referrer has 20 qualified referrals. For marketers, only rewarded SELLER/FARMER and KITCHEN referrals count.
+5. MARKETER is not available in public registration. An admin promotes an existing account.
+
+Railway environment variables
+-----------------------------
+REFERRAL_NORMAL_REWARD=200
+REFERRAL_MARKETER_REWARD=2000
+REFERRAL_REFERRED_USER_REWARD=0
+REFERRAL_MINIMUM_WITHDRAWAL_REFERRALS=20
+
+Create a marketer
+-----------------
+As an authenticated admin, call:
+PATCH /api/admin/marketers/{userId}/promote
+
+Remove marketer access:
+PATCH /api/admin/marketers/{userId}/remove?fallbackRole=CUSTOMER
+
+Testing
+-------
+1. Promote a test account to MARKETER.
+2. Copy the referral code from /referrals.html.
+3. Register and OTP-verify a CUSTOMER with the code: reward stays NGN 0 for the marketer.
+4. Register and OTP-verify a SELLER with the code: marketer receives NGN 2,000.
+5. Register and OTP-verify a KITCHEN with the code: marketer receives NGN 2,000.
+6. The withdrawal button remains locked until 20 qualified SELLER/KITCHEN sign-ups.
+
+Build
+-----
+Windows: .\mvnw.cmd clean package -DskipTests
+Run:     .\mvnw.cmd spring-boot:run

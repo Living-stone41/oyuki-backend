@@ -1,0 +1,32 @@
+OYUKI MARKETER REFERRAL UPDATE
+==============================
+
+Implemented:
+- Added MARKETER role (admin-only; not available through public registration).
+- Normal users earn NGN 200 for each OTP-verified referral.
+- Marketers earn NGN 2,000 only for OTP-verified SELLER/FARMER or KITCHEN registrations.
+- Customer and Rider registrations made with a marketer code remain visible but earn NGN 0 and do not count toward withdrawal.
+- Referral withdrawals unlock at 20 qualified sign-ups.
+- Backend enforces withdrawal eligibility; it is not only a frontend restriction.
+- Referral and wallet pages show progress, remaining sign-ups, reward amount and marketer status.
+- Added admin endpoints to promote/remove marketers.
+
+Admin endpoints:
+PATCH /api/admin/marketers/{userId}/promote
+PATCH /api/admin/marketers/{userId}/remove?fallbackRole=CUSTOMER
+
+Railway variables:
+REFERRAL_NORMAL_REWARD=200
+REFERRAL_MARKETER_REWARD=2000
+REFERRAL_REFERRED_USER_REWARD=0
+REFERRAL_MINIMUM_WITHDRAWAL_REFERRALS=20
+
+Database note:
+If users.role is a MySQL ENUM, run the MARKETER block at the bottom of DATABASE-UPDATES.sql once.
+If it is VARCHAR, Hibernate can use MARKETER without that manual migration.
+
+Build:
+.\mvnw.cmd clean package -DskipTests
+
+Run:
+.\mvnw.cmd spring-boot:run

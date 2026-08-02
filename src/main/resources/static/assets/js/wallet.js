@@ -24,7 +24,12 @@
     availableBalance: 0,
     pendingBalance: 0,
     referralEarnings: 0,
-    transactions: []
+    transactions: [],
+    qualifiedReferrals: 0,
+    minimumWithdrawalReferrals: 20,
+    remainingForWithdrawal: 20,
+    withdrawalEligible: false,
+    referrerType: "NORMAL"
   };
 
   function getToken() {
@@ -194,6 +199,26 @@
       );
     }
 
+    const eligibilityMessage = q("#walletEligibilityMessage");
+    const withdrawButton = q("#withdrawWalletButton");
+    const qualified = Number(state.qualifiedReferrals || 0);
+    const minimum = Number(state.minimumWithdrawalReferrals || 20);
+    const marketer = String(state.referrerType || "").toUpperCase() === "MARKETER";
+    if (eligibilityMessage) {
+      eligibilityMessage.textContent = state.withdrawalEligible
+        ? `Referral withdrawal unlocked (${qualified}/${minimum} qualified sign-ups).`
+        : marketer
+          ? `Referral withdrawal locked: ${qualified}/${minimum} verified Seller/Farmer or Kitchen sign-ups.`
+          : `Referral withdrawal progress: ${qualified}/${minimum} verified sign-ups.`;
+      eligibilityMessage.classList.toggle("eligible", Boolean(state.withdrawalEligible));
+    }
+    if (withdrawButton) {
+      withdrawButton.classList.toggle("wallet-action-locked", !state.withdrawalEligible && Number(state.referralEarnings || 0) > 0);
+      withdrawButton.title = !state.withdrawalEligible && Number(state.referralEarnings || 0) > 0
+        ? "Reach the referral sign-up requirement before withdrawing referral earnings"
+        : "Withdraw funds";
+    }
+
     renderTransactions(
       state.transactions || []
     );
@@ -323,6 +348,18 @@
     }
 
     const isFunding = type === "fund";
+
+    if (!isFunding && Number(state.referralEarnings || 0) > 0 && !state.withdrawalEligible) {
+      const remaining = Number(state.remainingForWithdrawal || 0);
+      const marketer = String(state.referrerType || "").toUpperCase() === "MARKETER";
+      showToast(
+        marketer
+          ? `You need ${remaining} more verified Seller/Farmer or Kitchen sign-ups before withdrawing.`
+          : `You need ${remaining} more verified sign-ups before withdrawing referral earnings.`,
+        "error"
+      );
+      return;
+    }
 
     modalContent.innerHTML = `
       <p class="wallet-eyebrow">

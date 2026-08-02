@@ -11,3 +11,11 @@ CREATE TABLE IF NOT EXISTS kitchen_images (
  INDEX idx_kitchen_images_profile (kitchen_profile_id),
  CONSTRAINT fk_kitchen_image_profile FOREIGN KEY (kitchen_profile_id) REFERENCES kitchen_profiles(id) ON DELETE CASCADE
 );
+
+
+-- MARKETER REFERRAL SYSTEM (run once only if users.role is a MySQL ENUM)
+-- If users.role is already VARCHAR, this statement is not required.
+ALTER TABLE users MODIFY COLUMN role ENUM(
+  'CUSTOMER','SELLER','KITCHEN','MARKETER','RIDER',
+  'LOGISTICS_ADMIN','ACCOUNT_OFFICER','ADMIN'
+) NOT NULL DEFAULT 'CUSTOMER';

@@ -4,6 +4,7 @@ import com.oyuki.referral.entity.Referral;
 import com.oyuki.referral.enums.ReferralStatus;
 import com.oyuki.referral.repository.ReferralRepository;
 import com.oyuki.user.entity.User;
+import com.oyuki.user.enums.Role;
 import com.oyuki.user.repository.UserRepository;
 import com.oyuki.wallet.entity.SellerWallet;
 import com.oyuki.wallet.entity.WalletTransaction;
@@ -29,11 +30,17 @@ public class ReferralService {
     private final SellerWalletRepository walletRepository;
     private final WalletTransactionRepository transactionRepository;
 
-    @Value("${app.referral.referrer-reward:500}")
-    private BigDecimal referrerReward;
+    @Value("${app.referral.normal-reward:200}")
+    private BigDecimal normalReward;
+
+    @Value("${app.referral.marketer-reward:2000}")
+    private BigDecimal marketerReward;
 
     @Value("${app.referral.referred-user-reward:0}")
     private BigDecimal referredUserReward;
+
+    @Value("${app.referral.minimum-withdrawal-referrals:20}")
+    private int minimumWithdrawalReferrals;
 
     @Transactional
     public String ensureReferralCode(User user) {
@@ -85,11 +92,28 @@ public class ReferralService {
         if (referral == null || referral.getStatus() == ReferralStatus.REWARDED) return;
         if (referral.getStatus() == ReferralStatus.REJECTED || referral.getStatus() == ReferralStatus.CANCELLED) return;
 
+        User referrer = referral.getReferrer();
+        boolean marketer = referrer.getRole() == Role.MARKETER;
+        boolean eligibleBusinessReferral = referredUser.getRole() == Role.SELLER
+                || referredUser.getRole() == Role.KITCHEN;
+
         referral.setStatus(ReferralStatus.QUALIFIED);
         referral.setQualifiedAt(LocalDateTime.now());
 
-        credit(referral.getReferrer(), referrerReward,
-                "Referral reward for " + referredUser.getFullName(),
+        // Marketers earn only for verified Seller/Farmer or Kitchen accounts.
+        if (marketer && !eligibleBusinessReferral) {
+            referral.setReferrerReward(BigDecimal.ZERO);
+            referral.setReferredUserReward(BigDecimal.ZERO);
+            referralRepository.save(referral);
+            return;
+        }
+
+        BigDecimal reward = marketer ? marketerReward : normalReward;
+
+        credit(referrer, reward,
+                marketer
+                        ? "Marketer reward for verified " + referredUser.getRole() + " registration"
+                        : "Referral reward for " + referredUser.getFullName(),
                 "REFERRAL-" + referral.getId() + "-REFERRER",
                 WalletTransactionType.REFERRAL_REWARD);
 
@@ -100,7 +124,7 @@ public class ReferralService {
                     WalletTransactionType.WELCOME_REWARD);
         }
 
-        referral.setReferrerReward(referrerReward);
+        referral.setReferrerReward(reward);
         referral.setReferredUserReward(referredUserReward);
         referral.setStatus(ReferralStatus.REWARDED);
         referral.setRewardedAt(LocalDateTime.now());
@@ -112,12 +136,13 @@ public class ReferralService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        String code = user.getReferralCode();
         List<Referral> referrals = referralRepository.findAllByReferrer_IdOrderByCreatedAtDesc(userId);
+        boolean marketer = user.getRole() == Role.MARKETER;
 
         long verified = referrals.stream()
                 .filter(r -> r.getStatus() == ReferralStatus.QUALIFIED || r.getStatus() == ReferralStatus.REWARDED)
                 .count();
+        long qualified = qualifiedWithdrawalReferralCount(user, referrals);
 
         BigDecimal totalEarned = referrals.stream()
                 .filter(r -> r.getStatus() == ReferralStatus.REWARDED)
@@ -125,17 +150,60 @@ public class ReferralService {
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        List<Map<String, Object>> history = referrals.stream().map(this::mapReferral).toList();
-
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("code", code);
-        result.put("referralCode", code);
+        result.put("code", user.getReferralCode());
+        result.put("referralCode", user.getReferralCode());
+        result.put("referrerType", marketer ? "MARKETER" : "NORMAL");
+        result.put("role", user.getRole());
         result.put("totalInvited", referrals.size());
         result.put("verifiedInvited", verified);
+        result.put("qualifiedReferrals", qualified);
+        result.put("minimumWithdrawalReferrals", minimumWithdrawalReferrals);
+        result.put("remainingForWithdrawal", Math.max(0, minimumWithdrawalReferrals - qualified));
+        result.put("withdrawalEligible", qualified >= minimumWithdrawalReferrals);
         result.put("totalEarned", totalEarned);
-        result.put("rewardPerVerifiedReferral", referrerReward);
-        result.put("history", history);
+        result.put("rewardPerVerifiedReferral", marketer ? marketerReward : normalReward);
+        result.put("eligibleRoles", marketer ? List.of(Role.SELLER, Role.KITCHEN) : List.of("ANY_VERIFIED_USER"));
+        result.put("history", referrals.stream().map(this::mapReferral).toList());
         return result;
+    }
+
+    @Transactional(readOnly = true)
+    public long getQualifiedWithdrawalReferralCount(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return qualifiedWithdrawalReferralCount(
+                user,
+                referralRepository.findAllByReferrer_IdOrderByCreatedAtDesc(userId)
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public void assertReferralWithdrawalEligible(Long userId) {
+        long rewardedTransactions = transactionRepository
+                .findTop50ByUser_IdOrderByCreatedAtDesc(userId).stream()
+                .filter(t -> t.getType() == WalletTransactionType.REFERRAL_REWARD)
+                .count();
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // A marketer account is always subject to the marketer threshold.
+        // Normal accounts are subject to it once they have referral earnings.
+        if (user.getRole() != Role.MARKETER && rewardedTransactions == 0) return;
+
+        long qualified = getQualifiedWithdrawalReferralCount(userId);
+        if (qualified < minimumWithdrawalReferrals) {
+            long remaining = minimumWithdrawalReferrals - qualified;
+            String target = user.getRole() == Role.MARKETER
+                    ? "verified Seller/Farmer or Kitchen"
+                    : "verified";
+            throw new IllegalStateException(
+                    "You need " + remaining + " more " + target
+                            + " referral" + (remaining == 1 ? "" : "s")
+                            + " before you can withdraw referral earnings"
+            );
+        }
     }
 
     @Transactional
@@ -145,6 +213,15 @@ public class ReferralService {
                 ensureReferralCode(user);
             }
         }
+    }
+
+    private long qualifiedWithdrawalReferralCount(User referrer, List<Referral> referrals) {
+        return referrals.stream()
+                .filter(r -> r.getStatus() == ReferralStatus.REWARDED)
+                .filter(r -> referrer.getRole() != Role.MARKETER
+                        || r.getReferredUser().getRole() == Role.SELLER
+                        || r.getReferredUser().getRole() == Role.KITCHEN)
+                .count();
     }
 
     private void credit(User user, BigDecimal amount, String description,
@@ -171,6 +248,7 @@ public class ReferralService {
         Map<String, Object> item = new LinkedHashMap<>();
         item.put("id", referral.getId());
         item.put("referredName", referral.getReferredUser().getFullName());
+        item.put("referredRole", referral.getReferredUser().getRole());
         item.put("status", referral.getStatus());
         item.put("reward", referral.getReferrerReward());
         item.put("referrerReward", referral.getReferrerReward());

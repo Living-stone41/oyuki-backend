@@ -153,6 +153,21 @@
 
     </section>
 
+
+    <section class="referral-progress-card">
+      <div class="referral-progress-copy">
+        <span id="referrerTypeLabel">Referral partner</span>
+        <strong><span id="qualifiedReferrals">0</span> / <span id="minimumReferrals">20</span> qualified sign-ups</strong>
+        <p id="withdrawalProgressText">Reach 20 qualified sign-ups to unlock referral withdrawals.</p>
+      </div>
+      <div class="referral-progress-track" aria-label="Referral withdrawal progress">
+        <span id="referralProgressBar"></span>
+      </div>
+      <a id="withdrawReferralButton" class="referral-withdraw-button disabled" href="wallet.html" aria-disabled="true">
+        <i class="bi bi-cash-coin"></i> Withdraw earnings
+      </a>
+    </section>
+
     <section class="wallet-section">
 
       <div class="wallet-section-head">
@@ -288,9 +303,9 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <!-- app.js must load before referrals.js -->
-  <script src="assets/js/app.js"></script>
+  <script src="assets/js/app.js?v=20260802-1"></script>
 
-  <script src="assets/js/referrals.js"></script>
+  <script src="assets/js/referrals.js?v=20260802-1"></script>
 
 </body>
 

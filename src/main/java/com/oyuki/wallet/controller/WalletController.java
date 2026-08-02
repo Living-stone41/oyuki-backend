@@ -1,6 +1,7 @@
 package com.oyuki.wallet.controller;
 
 import com.oyuki.user.repository.UserRepository;
+import com.oyuki.referral.service.ReferralService;
 import com.oyuki.wallet.entity.SellerWallet;
 import com.oyuki.wallet.entity.WalletTransaction;
 import com.oyuki.wallet.entity.WithdrawalRequest;
@@ -24,15 +25,18 @@ public class WalletController {
     private final WithdrawalRequestRepository withdrawals;
     private final WalletTransactionRepository transactions;
     private final UserRepository users;
+    private final ReferralService referralService;
 
     public WalletController(SellerWalletRepository wallets,
                             WithdrawalRequestRepository withdrawals,
                             WalletTransactionRepository transactions,
-                            UserRepository users) {
+                            UserRepository users,
+                            ReferralService referralService) {
         this.wallets = wallets;
         this.withdrawals = withdrawals;
         this.transactions = transactions;
         this.users = users;
+        this.referralService = referralService;
     }
 
     @GetMapping
@@ -55,7 +59,9 @@ public class WalletController {
     @PostMapping("/withdrawals")
     public ResponseEntity<?> withdraw(Authentication authentication,
                                       @RequestBody Map<String, String> body) {
-        SellerWallet wallet = get((Long) authentication.getPrincipal());
+        Long userId = (Long) authentication.getPrincipal();
+        referralService.assertReferralWithdrawalEligible(userId);
+        SellerWallet wallet = get(userId);
         BigDecimal amount = new BigDecimal(body.get("amount"));
         if (amount.signum() <= 0 || wallet.getAvailableBalance().compareTo(amount) < 0) {
             throw new IllegalArgumentException("Insufficient wallet balance");
@@ -131,6 +137,12 @@ public class WalletController {
         result.put("bankName", wallet.getBankName());
         result.put("accountNumber", wallet.getAccountNumber());
         result.put("accountName", wallet.getAccountName());
+        Map<String, Object> referralSummary = referralService.getMyReferralSummary(userId);
+        result.put("qualifiedReferrals", referralSummary.get("qualifiedReferrals"));
+        result.put("minimumWithdrawalReferrals", referralSummary.get("minimumWithdrawalReferrals"));
+        result.put("remainingForWithdrawal", referralSummary.get("remainingForWithdrawal"));
+        result.put("withdrawalEligible", referralSummary.get("withdrawalEligible"));
+        result.put("referrerType", referralSummary.get("referrerType"));
         result.put("transactions", transactionList.stream().map(this::mapTransaction).toList());
         return result;
     }
