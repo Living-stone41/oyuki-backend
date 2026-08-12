@@ -311,21 +311,6 @@
         );
     }
 
-    const qualified = Number(referralData.qualifiedReferralCount ?? referralData.verifiedInvited ?? 0);
-    const minimum = Number(referralData.minimumWithdrawalReferrals || 20);
-    const rewardText = q("#referralRewardText");
-    const progressCount = q("#referralProgressCount");
-    const progressBar = q("#referralProgressBar");
-    const eligibilityText = q("#referralEligibilityText");
-    if (rewardText) rewardText.textContent = referralData.marketer
-      ? `Earn ${formatMoney(referralData.rewardPerVerifiedReferral || 2000)} for each verified Seller or Kitchen.`
-      : `Earn ${formatMoney(referralData.rewardPerVerifiedReferral || 200)} for each verified registration.`;
-    if (progressCount) progressCount.textContent = `${qualified} / ${minimum}`;
-    if (progressBar) progressBar.style.width = `${Math.min(100, (qualified / minimum) * 100)}%`;
-    if (eligibilityText) eligibilityText.textContent = referralData.withdrawalEligible
-      ? "You have reached the withdrawal requirement."
-      : `You need ${Math.max(0, minimum - qualified)} more qualified referrals before withdrawal.`;
-
     renderReferralHistory(
       referralData.history ||
       referralData.referrals ||

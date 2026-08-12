@@ -24,10 +24,7 @@
     availableBalance: 0,
     pendingBalance: 0,
     referralEarnings: 0,
-    transactions: [],
-    qualifiedReferralCount: 0,
-    minimumWithdrawalReferrals: 20,
-    withdrawalEligible: false
+    transactions: []
   };
 
   function getToken() {
@@ -197,22 +194,6 @@
       );
     }
 
-    const qualified = Number(state.qualifiedReferralCount || 0);
-    const minimum = Number(state.minimumWithdrawalReferrals || 20);
-    const progress = q("#walletReferralProgress");
-    const progressBar = q("#walletProgressBar");
-    const eligibilityText = q("#walletEligibilityText");
-    const withdrawButton = q("#walletWithdrawButton");
-    if (progress) progress.textContent = `${qualified} / ${minimum}`;
-    if (progressBar) progressBar.style.width = `${Math.min(100, (qualified / minimum) * 100)}%`;
-    if (eligibilityText) eligibilityText.textContent = state.withdrawalEligible
-      ? "You can request a withdrawal."
-      : `You need ${Math.max(0, minimum - qualified)} more qualified referrals before withdrawing.`;
-    if (withdrawButton) {
-      withdrawButton.disabled = !state.withdrawalEligible;
-      withdrawButton.title = state.withdrawalEligible ? "Withdraw funds" : eligibilityText?.textContent || "Withdrawal locked";
-    }
-
     renderTransactions(
       state.transactions || []
     );
@@ -332,10 +313,6 @@
   }
 
   function openModal(type) {
-    if (type === "withdraw" && !state.withdrawalEligible) {
-      showToast(`You need ${Math.max(0, Number(state.minimumWithdrawalReferrals || 20) - Number(state.qualifiedReferralCount || 0))} more qualified referrals before withdrawing.`, "error");
-      return;
-    }
     const modal = q("#walletModal");
     const modalContent = q(
       "#walletModalContent"

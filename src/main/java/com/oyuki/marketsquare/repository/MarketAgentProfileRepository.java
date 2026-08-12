@@ -1,0 +1,1 @@
+package com.oyuki.marketsquare.repository; import com.oyuki.marketsquare.entity.MarketAgentProfile; import org.springframework.data.jpa.repository.JpaRepository; public interface MarketAgentProfileRepository extends JpaRepository<MarketAgentProfile,Long> { }

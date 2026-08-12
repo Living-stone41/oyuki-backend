@@ -1,0 +1,1 @@
+package com.oyuki.marketsquare.enums; public enum CommissionType { FIXED, PERCENTAGE }

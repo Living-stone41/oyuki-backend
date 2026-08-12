@@ -1,0 +1,1 @@
+package com.oyuki.marketsquare.repository; import com.oyuki.marketsquare.entity.MarketPriceUpdate; import org.springframework.data.jpa.repository.JpaRepository; public interface MarketPriceUpdateRepository extends JpaRepository<MarketPriceUpdate,Long> { }

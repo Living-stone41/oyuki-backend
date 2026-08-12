@@ -1,0 +1,1 @@
+package com.oyuki.marketsquare.repository; import com.oyuki.marketsquare.entity.HandoverRecord; import org.springframework.data.jpa.repository.JpaRepository; public interface HandoverRecordRepository extends JpaRepository<HandoverRecord,Long> { }

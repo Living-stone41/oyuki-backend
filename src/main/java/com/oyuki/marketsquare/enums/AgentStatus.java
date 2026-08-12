@@ -1,0 +1,1 @@
+package com.oyuki.marketsquare.enums; public enum AgentStatus { PENDING, ACTIVE, SUSPENDED, DISABLED }

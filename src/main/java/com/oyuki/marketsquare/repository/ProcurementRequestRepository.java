@@ -1,0 +1,1 @@
+package com.oyuki.marketsquare.repository; import com.oyuki.marketsquare.entity.ProcurementRequest; import org.springframework.data.jpa.repository.JpaRepository; public interface ProcurementRequestRepository extends JpaRepository<ProcurementRequest,Long> { }

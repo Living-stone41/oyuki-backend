@@ -1,0 +1,1 @@
+package com.oyuki.marketsquare.repository; import com.oyuki.marketsquare.entity.PurchaseEvidence; import org.springframework.data.jpa.repository.JpaRepository; public interface PurchaseEvidenceRepository extends JpaRepository<PurchaseEvidence,Long> { }

@@ -70,11 +70,11 @@ public class SecurityConfig {
                                 "/register.html",
                                 "/verify-otp.html",
                                 "/forgot-password.html",
-                                "/marketer-activate.html",
                                 "/reset-password.html",
                                 "/privacy.html",
                                 "/terms.html",
                                 "/feature-center.html",
+                                "/markets.html",
                                 "/favicon.ico",
                                 "/assets/**"
                         ).permitAll()
@@ -148,6 +148,14 @@ public class SecurityConfig {
                         ).permitAll()
 
                         /*
+                         * Public Market Square directory and location lookup.
+                         */
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/market-directory/**"
+                        ).permitAll()
+
+                        /*
                          * Administrator API routes.
                          */
                         .requestMatchers(
@@ -185,6 +193,9 @@ public class SecurityConfig {
                                 "RIDER",
                                 "ADMIN"
                         )
+
+                        /* Market Square agent operations. */
+                        .requestMatchers("/api/market-agent/**").hasAnyRole("MARKET_AGENT", "MARKET_SUPERVISOR", "ADMIN")
 
                         /*
                          * Seller and shared provider routes.

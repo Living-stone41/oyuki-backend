@@ -316,13 +316,9 @@
       return '/kitchen.html';
     }
 
-    if (value === 'MARKETER') {
-<<<<<<< HEAD
-      return '/referrals.html';
-=======
-      return '/marketer.html';
->>>>>>> 1f72347 (Update Oyuki backend)
-    }
+    if (value === 'MARKET_AGENT') { return '/market-agent.html'; }
+
+    if (value === 'MARKET_SUPERVISOR') { return '/market-agent.html'; }
 
     if (value === 'ADMIN') {
       return '/admin.html';
@@ -2248,6 +2244,13 @@ function renderNav() {
             href="/shop.html"
           >
             Marketplace
+          </a>
+
+          <a
+            class="nav-link"
+            href="/markets.html"
+          >
+            Market Square
           </a>
 
           <a

@@ -3,7 +3,6 @@ package com.oyuki.auth.controller;
 import com.oyuki.auth.dto.*;
 import com.oyuki.auth.service.AuthService;
 import com.oyuki.auth.service.LoginService;
-import com.oyuki.auth.service.MarketerActivationService;
 import com.oyuki.auth.service.PasswordResetService;
 import com.oyuki.common.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -20,18 +19,15 @@ public class AuthController {
     private final AuthService authService;
     private final LoginService loginService;
     private final PasswordResetService passwordResetService;
-    private final MarketerActivationService marketerActivationService;
 
     public AuthController(
             AuthService authService,
             LoginService loginService,
-            PasswordResetService passwordResetService,
-            MarketerActivationService marketerActivationService
+            PasswordResetService passwordResetService
     ) {
         this.authService = authService;
         this.loginService = loginService;
         this.passwordResetService = passwordResetService;
-        this.marketerActivationService = marketerActivationService;
     }
 
     @PostMapping("/register")
@@ -75,17 +71,6 @@ public class AuthController {
                         result
                 )
         );
-    }
-
-
-    @PostMapping("/activate-marketer")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> activateMarketer(
-            @Valid @RequestBody ActivateMarketerRequest request
-    ) {
-        return ResponseEntity.ok(ApiResponse.success(
-                "Marketer account verified successfully",
-                marketerActivationService.activate(request)
-        ));
     }
 
     @PostMapping("/login")

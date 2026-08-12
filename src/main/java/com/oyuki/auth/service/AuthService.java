@@ -438,7 +438,7 @@ public class AuthService {
         /*
          * Customers become active immediately.
          */
-        if (user.getRole() == Role.CUSTOMER || user.getRole() == Role.MARKETER) {
+        if (user.getRole() == Role.CUSTOMER) {
             user.setStatus(
                     AccountStatus.ACTIVE
             );

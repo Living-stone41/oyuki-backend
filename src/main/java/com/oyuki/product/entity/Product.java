@@ -3,6 +3,7 @@ package com.oyuki.product.entity;
 import com.oyuki.product.enums.ProductStatus;
 import com.oyuki.product.enums.ProductType;
 import com.oyuki.user.entity.User;
+import com.oyuki.marketsquare.entity.Market;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -124,6 +125,16 @@ public class Product {
             length = 150
     )
     private String area;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "market_id")
+    private Market market;
+
+    @Column(name = "stall_name_or_number", length = 150)
+    private String stallNameOrNumber;
+
+    @Column(name = "pickup_point", length = 500)
+    private String pickupPoint;
 
     @Column(
             name = "average_rating",
