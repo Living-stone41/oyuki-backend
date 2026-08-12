@@ -8,5 +8,6 @@ public enum Role {
     RIDER,
     LOGISTICS_ADMIN,
     ACCOUNT_OFFICER,
+    MARKETER,
     ADMIN
 }

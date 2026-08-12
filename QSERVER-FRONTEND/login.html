@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <title>Log in | Oyuki</title>
+
+  <link
+    rel="icon"
+    href="/favicon.ico"
+  >
+
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+  >
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <link
+    rel="stylesheet"
+    href="/assets/css/style.css"
+  >
+</head>
+
+<body>
+
+  <div class="oy-auth-page">
+
+    <section class="oy-auth-visual">
+
+      <a
+        class="oy-auth-brand"
+        href="/home.html"
+      >
+        Oyuki
+      </a>
+
+      <div class="oy-auth-copy">
+        <h2>
+          Fresh food.<br>
+          Trusted people.
+        </h2>
+
+        <p>
+          Shop farm produce, order ready meals and connect
+          with verified kitchens across Nigeria.
+        </p>
+      </div>
+
+      <div class="oy-auth-points">
+        <span>Secure checkout</span>
+        <span>Nationwide delivery</span>
+        <span>Verified providers</span>
+      </div>
+
+    </section>
+
+    <main class="oy-auth-main">
+
+      <div class="oy-auth-box">
+
+        <a
+          href="/home.html"
+          class="oy-wordmark text-decoration-none"
+        >
+          Oyuki
+        </a>
+
+        <h1>Welcome back!</h1>
+
+        <p class="oy-auth-sub">
+          Enter your email address or phone number and
+          password to continue.
+        </p>
+
+        <div
+          id="loginError"
+          class="oy-inline-error"
+          role="alert"
+          aria-live="polite"
+        ></div>
+
+        <form id="loginForm">
+
+          <div class="oy-field">
+            <label for="identifier">
+              Email or phone number
+            </label>
+
+            <div class="oy-input-wrap">
+              <i class="bi bi-envelope"></i>
+
+              <input
+                id="identifier"
+                class="oy-input"
+                name="identifier"
+                type="text"
+                required
+                autocomplete="username"
+                placeholder="Email address or phone number"
+              >
+            </div>
+          </div>
+
+          <div class="oy-field">
+            <label for="loginPassword">
+              Password
+            </label>
+
+            <div class="oy-input-wrap">
+              <i class="bi bi-lock"></i>
+
+              <input
+                id="loginPassword"
+                class="oy-input"
+                name="password"
+                type="password"
+                required
+                autocomplete="current-password"
+                placeholder="Password"
+              >
+
+              <button
+                class="oy-password-toggle"
+                type="button"
+                id="passwordToggle"
+                aria-label="Show password"
+              >
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="text-end mb-3">
+            <a
+              href="/forgot-password.html"
+              class="small fw-semibold text-decoration-none"
+            >
+              Forgot password?
+            </a>
+          </div>
+
+          <button
+            id="loginBtn"
+            class="oy-submit"
+            type="submit"
+          >
+            Log in
+          </button>
+
+        </form>
+
+        <div class="oy-divider">
+          or continue with
+        </div>
+
+        <button
+          type="button"
+          class="oy-social"
+          id="googleLogin"
+        >
+          <i class="bi bi-google me-2"></i>
+          Continue with Google
+        </button>
+
+        <button
+          type="button"
+          class="oy-social"
+          id="facebookLogin"
+        >
+          <i class="bi bi-facebook me-2"></i>
+          Continue with Facebook
+        </button>
+
+        <p class="oy-auth-bottom">
+          Haven't signed up yet?
+
+          <a href="/register.html">
+            Create an account
+          </a>
+        </p>
+
+        <p class="oy-auth-bottom">
+          <a href="/home.html">
+            Return to homepage
+          </a>
+        </p>
+
+      </div>
+
+    </main>
+
+  </div>
+
+  <script>
+    const API_BASE_URL =
+      'https://illustrious-nurturing-production-8169.up.railway.app/api';
+
+    const WEBSITE_ORIGIN =
+      'https://oyukimarketplace.com';
+
+    const STORAGE = {
+      token: 'oyuki_token',
+      user: 'oyuki_user'
+    };
+
+    function showToast(message, type = '') {
+      const toast = document.createElement('div');
+
+      toast.className =
+        `oy-toast ${type}`;
+
+      toast.textContent = message;
+
+      document.body.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.add('show');
+      });
+
+      setTimeout(() => {
+        toast.classList.remove('show');
+
+        setTimeout(() => {
+          toast.remove();
+        }, 250);
+      }, 3000);
+    }
+
+    function getErrorMessage(payload, fallback) {
+      if (!payload) {
+        return fallback;
+      }
+
+      if (typeof payload === 'string') {
+        return payload;
+      }
+
+      return (
+        payload.message ||
+        payload.rootMessage ||
+        payload.error ||
+        fallback
+      );
+    }
+
+    function unwrap(payload) {
+      if (
+        payload &&
+        Object.prototype.hasOwnProperty.call(
+          payload,
+          'data'
+        )
+      ) {
+        return payload.data;
+      }
+
+      return payload;
+    }
+
+    function rolePage(role) {
+      const value =
+        String(role || '').toUpperCase();
+
+      if (value === 'CUSTOMER') {
+        return `${WEBSITE_ORIGIN}/customer.html`;
+      }
+
+      if (
+        value === 'SELLER' ||
+        value === 'FARMER'
+      ) {
+        return `${WEBSITE_ORIGIN}/seller.html`;
+      }
+
+      if (value === 'KITCHEN') {
+        return `${WEBSITE_ORIGIN}/kitchen.html`;
+      }
+
+      if (value === 'ADMIN') {
+        return `${WEBSITE_ORIGIN}/admin.html`;
+      }
+
+      if (
+        value === 'LOGISTICS_ADMIN' ||
+        value === 'LOGISTIC_ADMIN'
+      ) {
+        return `${WEBSITE_ORIGIN}/logistics-admin.html`;
+      }
+
+      if (value === 'ACCOUNT_OFFICER') {
+        return `${WEBSITE_ORIGIN}/account-officer.html`;
+      }
+
+      if (value === 'RIDER') {
+        return `${WEBSITE_ORIGIN}/tracking.html`;
+      }
+
+      return `${WEBSITE_ORIGIN}/home.html`;
+    }
+
+    async function login(identifier, password) {
+      let response;
+
+      try {
+        response = await fetch(
+          `${API_BASE_URL}/auth/login`,
+          {
+            method: 'POST',
+
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json'
+            },
+
+            body: JSON.stringify({
+              identifier,
+              password
+            })
+          }
+        );
+      } catch (error) {
+        console.error(
+          'Login connection error:',
+          error
+        );
+
+        throw new Error(
+          'Cannot reach the Oyuki server. Check your internet connection and try again.'
+        );
+      }
+
+      const text = await response.text();
+
+      let payload = null;
+
+      if (text) {
+        try {
+          payload = JSON.parse(text);
+        } catch {
+          payload = text;
+        }
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          getErrorMessage(
+            payload,
+            `Login failed (${response.status})`
+          )
+        );
+      }
+
+      const result = unwrap(payload);
+
+      if (!result || !result.token) {
+        throw new Error(
+          'Login succeeded, but the server did not return an access token.'
+        );
+      }
+
+      const user = {
+        id: result.userId,
+        userId: result.userId,
+        fullName: result.fullName,
+        role: result.role,
+        status: result.status
+      };
+
+      localStorage.setItem(
+        STORAGE.token,
+        result.token
+      );
+
+      localStorage.setItem(
+        STORAGE.user,
+        JSON.stringify(user)
+      );
+
+      return user;
+    }
+
+    document.addEventListener(
+      'DOMContentLoaded',
+      function () {
+        const form =
+          document.getElementById('loginForm');
+
+        const loginButton =
+          document.getElementById('loginBtn');
+
+        const errorBox =
+          document.getElementById('loginError');
+
+        const passwordInput =
+          document.getElementById(
+            'loginPassword'
+          );
+
+        const passwordToggle =
+          document.getElementById(
+            'passwordToggle'
+          );
+
+        const googleButton =
+          document.getElementById(
+            'googleLogin'
+          );
+
+        const facebookButton =
+          document.getElementById(
+            'facebookLogin'
+          );
+
+        function showError(message) {
+          errorBox.textContent = message;
+          errorBox.classList.add('show');
+        }
+
+        function clearError() {
+          errorBox.textContent = '';
+          errorBox.classList.remove('show');
+        }
+
+        function socialNotice() {
+          showToast(
+            'Social login will be available after OAuth is configured.',
+            'error'
+          );
+        }
+
+        passwordToggle.addEventListener(
+          'click',
+          function () {
+            const passwordIsVisible =
+              passwordInput.type === 'text';
+
+            passwordInput.type =
+              passwordIsVisible
+                ? 'password'
+                : 'text';
+
+            passwordToggle.innerHTML =
+              passwordIsVisible
+                ? '<i class="bi bi-eye"></i>'
+                : '<i class="bi bi-eye-slash"></i>';
+
+            passwordToggle.setAttribute(
+              'aria-label',
+              passwordIsVisible
+                ? 'Show password'
+                : 'Hide password'
+            );
+          }
+        );
+
+        googleButton.addEventListener(
+          'click',
+          socialNotice
+        );
+
+        facebookButton.addEventListener(
+          'click',
+          socialNotice
+        );
+
+        form.addEventListener(
+          'submit',
+          async function (event) {
+            event.preventDefault();
+
+            clearError();
+
+            const identifier =
+              document
+                .getElementById('identifier')
+                .value
+                .trim();
+
+            const password =
+              passwordInput.value;
+
+            if (!identifier || !password) {
+              showError(
+                'Enter your email address or phone number and password.'
+              );
+
+              return;
+            }
+
+            loginButton.disabled = true;
+            loginButton.textContent =
+              'Logging in…';
+
+            try {
+              const user =
+                await login(
+                  identifier,
+                  password
+                );
+
+              showToast(
+                `Welcome back, ${user.fullName || 'User'}!`,
+                'success'
+              );
+
+              const redirect =
+                new URLSearchParams(
+                  window.location.search
+                ).get('redirect');
+
+              const safeRedirect =
+                redirect &&
+                !redirect.startsWith('http://') &&
+                !redirect.startsWith('https://') &&
+                !redirect.startsWith('//');
+
+              const destination =
+                safeRedirect
+                  ? redirect
+                  : rolePage(user.role);
+
+              setTimeout(
+                function () {
+                  window.location.href =
+                    destination;
+                },
+                450
+              );
+
+            } catch (error) {
+              showError(
+                error.message ||
+                'Unable to log in. Check your details and try again.'
+              );
+
+            } finally {
+              loginButton.disabled = false;
+              loginButton.textContent =
+                'Log in';
+            }
+          }
+        );
+      }
+    );
+  </script>
+
+</body>
+</html>

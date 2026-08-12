@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ready Meals — Order Home-Cooked Nigerian Dishes | Oyuki</title>
+<meta name="description" content="Order jollof, egusi, suya, shawarma, pizza and more from trusted Nigerian home kitchens.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head><body>
+<div id="oy-navbar"></div>
+
+<section class="section-sm" style="background:var(--brand-soft)">
+  <div class="container">
+    <span class="eyebrow">Ready meals</span>
+    <h1 class="mt-1">Hot, home-cooked & ready to eat</h1>
+    <div class="d-flex flex-wrap gap-2 mt-3" id="cat-pills"></div>
+  </div>
+</section>
+
+<section class="section-sm">
+  <div class="container">
+    <div class="row g-3 align-items-end mb-3">
+      <div class="col-md-6"><input id="q" class="form-control" placeholder="Search meals…"></div>
+      <div class="col-md-3"><select id="sort" class="form-select"><option value="">Sort by</option><option value="price-asc">Price ↑</option><option value="price-desc">Price ↓</option><option value="rating">Top rated</option></select></div>
+      <div class="col-md-3 text-md-end"><small class="text-muted" id="count"></small></div>
+    </div>
+    <div class="row" id="grid"></div>
+  </div>
+</section>
+
+<div id="oy-footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+
+let allProducts=[], category='All';
+document.addEventListener('DOMContentLoaded', async () => {
+  const params=new URLSearchParams(location.search); category=params.get('cat')||'All'; document.getElementById('q').value=params.get('q')||'';
+  document.getElementById('grid').innerHTML='<div class="col-12 text-muted py-5 text-center">Loading products…</div>';
+  try { allProducts=await Oyuki.Products.list({productType:'READY_MEAL'}); renderCategories(); render(); }
+  catch(error){ document.getElementById('grid').innerHTML=`<div class="col-12 alert alert-danger">${Oyuki.escapeHtml(error.message)}</div>`; }
+  document.getElementById('q').addEventListener('input',render); document.getElementById('sort').addEventListener('change',render);
+});
+function renderCategories(){ const cats=['All',...new Set(allProducts.map(p=>p.category).filter(Boolean))]; document.getElementById('cat-pills').innerHTML=cats.map(c=>`<span class="cat-pill ${c===category?'active':''}" data-c="${Oyuki.escapeHtml(c)}">${Oyuki.escapeHtml(c)}</span>`).join(''); document.querySelectorAll('.cat-pill').forEach(el=>el.onclick=()=>{category=el.dataset.c;renderCategories();render();}); }
+function render(){ let list=[...allProducts]; if(category!=='All') list=list.filter(p=>p.category===category); const q=document.getElementById('q').value.toLowerCase().trim(); if(q) list=list.filter(p=>(p.name+' '+p.category+' '+p.ownerName).toLowerCase().includes(q)); const sort=document.getElementById('sort').value; if(sort==='price-asc') list.sort((a,b)=>a.price-b.price); if(sort==='price-desc') list.sort((a,b)=>b.price-a.price); if(sort==='rating') list.sort((a,b)=>b.rating-a.rating); document.getElementById('count').textContent=list.length+' meals'; document.getElementById('grid').innerHTML=list.map(Oyuki.productCard).join('')||'<div class="col-12 text-center text-muted py-5">No products found.</div>'; }
+
+</script>
+</body></html>

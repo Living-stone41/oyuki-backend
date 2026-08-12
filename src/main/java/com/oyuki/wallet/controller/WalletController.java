@@ -1,6 +1,10 @@
 package com.oyuki.wallet.controller;
 
 import com.oyuki.user.repository.UserRepository;
+<<<<<<< HEAD
+=======
+import com.oyuki.user.entity.User;
+>>>>>>> 1f72347 (Update Oyuki backend)
 import com.oyuki.referral.service.ReferralService;
 import com.oyuki.wallet.entity.SellerWallet;
 import com.oyuki.wallet.entity.WalletTransaction;
@@ -60,7 +64,17 @@ public class WalletController {
     public ResponseEntity<?> withdraw(Authentication authentication,
                                       @RequestBody Map<String, String> body) {
         Long userId = (Long) authentication.getPrincipal();
+<<<<<<< HEAD
         referralService.assertReferralWithdrawalEligible(userId);
+=======
+        User user = users.findById(userId).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        long qualified = referralService.qualifiedCountForWithdrawal(user);
+        int minimum = referralService.minimumWithdrawalReferrals();
+        if (qualified < minimum) {
+            throw new IllegalStateException("You need " + (minimum - qualified)
+                    + " more qualified referrals before you can withdraw referral earnings");
+        }
+>>>>>>> 1f72347 (Update Oyuki backend)
         SellerWallet wallet = get(userId);
         BigDecimal amount = new BigDecimal(body.get("amount"));
         if (amount.signum() <= 0 || wallet.getAvailableBalance().compareTo(amount) < 0) {
@@ -137,12 +151,22 @@ public class WalletController {
         result.put("bankName", wallet.getBankName());
         result.put("accountNumber", wallet.getAccountNumber());
         result.put("accountName", wallet.getAccountName());
+<<<<<<< HEAD
         Map<String, Object> referralSummary = referralService.getMyReferralSummary(userId);
         result.put("qualifiedReferrals", referralSummary.get("qualifiedReferrals"));
         result.put("minimumWithdrawalReferrals", referralSummary.get("minimumWithdrawalReferrals"));
         result.put("remainingForWithdrawal", referralSummary.get("remainingForWithdrawal"));
         result.put("withdrawalEligible", referralSummary.get("withdrawalEligible"));
         result.put("referrerType", referralSummary.get("referrerType"));
+=======
+        User user = users.findById(userId).orElseThrow();
+        long qualified = referralService.qualifiedCountForWithdrawal(user);
+        int minimum = referralService.minimumWithdrawalReferrals();
+        result.put("qualifiedReferralCount", qualified);
+        result.put("minimumWithdrawalReferrals", minimum);
+        result.put("remainingForWithdrawal", Math.max(0, minimum - qualified));
+        result.put("withdrawalEligible", qualified >= minimum);
+>>>>>>> 1f72347 (Update Oyuki backend)
         result.put("transactions", transactionList.stream().map(this::mapTransaction).toList());
         return result;
     }

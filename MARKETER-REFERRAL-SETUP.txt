@@ -1,0 +1,35 @@
+OYUKI MARKETER REFERRAL UPDATE
+
+BUSINESS RULES
+- Admin creates MARKETER accounts from the admin dashboard.
+- An OTP is sent to the marketer's registered email.
+- The marketer activates at /marketer-activate.html and creates a password.
+- Normal users earn NGN 200 for each OTP-verified referral.
+- Marketers earn NGN 2,000 only when the OTP-verified referred role is SELLER or KITCHEN.
+- Marketers do not earn from CUSTOMER or RIDER sign-ups.
+- Withdrawal is blocked until 20 qualified referrals are reached.
+
+RAILWAY VARIABLES
+REFERRAL_NORMAL_REWARD=200
+REFERRAL_MARKETER_REWARD=2000
+REFERRAL_REFERRED_USER_REWARD=0
+REFERRAL_MINIMUM_WITHDRAWAL_REFERRALS=20
+
+MYSQL
+If users.role is a MySQL ENUM, run the marketer ALTER TABLE statement in DATABASE-UPDATES.sql once.
+
+FRONTEND FILES FOR QSERVERS
+marketer.html
+marketer-activate.html
+wallet.html
+referrals.html
+assets/js/marketer-dashboard.js
+assets/js/marketer-activate.js
+assets/js/wallet.js
+assets/js/referrals.js
+assets/js/app.js
+assets/css/style.css
+admin/admin.html
+admin/assets/js/admin-marketers.js
+admin/assets/js/admin-dashboard.js
+admin/assets/css/admin.css

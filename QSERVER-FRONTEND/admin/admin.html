@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dashboard | Oyuki Admin</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  <link
+  rel="stylesheet"
+  href="/assets/css/admin.css?v=6"
+>
+</head>
+<body>
+  <div class="admin-layout">
+    <aside id="sidebar" class="sidebar">
+      <a class="brand" href="admin.html"><span>O</span> Oyuki Admin</a>
+      <nav>
+        <button class="nav-item active" data-section="overview"><i class="bi bi-grid"></i> Overview</button>
+        <button class="nav-item" data-section="applications"><i class="bi bi-person-check"></i> Applications <span id="applicationBadge" class="nav-badge">0</span></button>
+        <button class="nav-item" data-section="users"><i class="bi bi-people"></i> Users</button>
+        <button class="nav-item" data-section="marketers"><i class="bi bi-megaphone"></i> Marketers</button>
+        <button class="nav-item" data-section="orders"><i class="bi bi-bag-check"></i> Orders</button>
+        <button class="nav-item" data-section="payments"><i class="bi bi-credit-card"></i> Payments</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <a href="https://oyukimarketplace.com/home.html"><i class="bi bi-box-arrow-up-right"></i> Marketplace</a>
+        <button id="logoutButton"><i class="bi bi-box-arrow-left"></i> Log out</button>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <button id="menuButton" class="icon-button"><i class="bi bi-list"></i></button>
+        <div><p class="eyebrow">Oyuki operations</p><h1 id="pageTitle">Overview</h1></div>
+        <div class="admin-user"><div class="avatar" id="adminInitial">A</div><div><strong id="adminName">Administrator</strong><small>ADMIN</small></div></div>
+      </header>
+
+      <div id="globalAlert" class="alert" hidden></div>
+
+      <section id="overview" class="page-section active">
+        <div class="stats-grid">
+          <article class="stat-card"><div class="stat-icon"><i class="bi bi-people"></i></div><div><span>Total users</span><strong id="totalUsers">—</strong></div></article>
+          <article class="stat-card"><div class="stat-icon"><i class="bi bi-person-check"></i></div><div><span>Pending applications</span><strong id="pendingApplications">—</strong></div></article>
+          <article class="stat-card"><div class="stat-icon"><i class="bi bi-bag"></i></div><div><span>Total orders</span><strong id="totalOrders">—</strong></div></article>
+          <article class="stat-card"><div class="stat-icon"><i class="bi bi-credit-card"></i></div><div><span>Pending payments</span><strong id="pendingPayments">—</strong></div></article>
+        </div>
+        <div class="content-grid">
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">Priority queue</p><h2>Pending provider applications</h2></div><button class="secondary-button" data-go="applications">View all</button></div><div id="overviewApplications" class="list-stack loading-block">Loading…</div></article>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">Recent activity</p><h2>Latest orders</h2></div><button class="secondary-button" data-go="orders">View all</button></div><div id="overviewOrders" class="list-stack loading-block">Loading…</div></article>
+        </div>
+      </section>
+
+      <section id="applications" class="page-section">
+        <div class="panel"><div class="panel-head"><div><p class="eyebrow">Verification</p><h2>Provider applications</h2></div><button id="refreshApplications" class="secondary-button"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div><div id="applicationsTable" class="table-wrap loading-block">Loading…</div></div>
+      </section>
+
+      <section id="users" class="page-section">
+        <div class="panel"><div class="panel-head responsive"><div><p class="eyebrow">Accounts</p><h2>User management</h2></div><div class="filters"><input id="userSearch" placeholder="Search users"><select id="userRole"><option value="">All roles</option><option>CUSTOMER</option><option>SELLER</option><option>FARMER</option><option>KITCHEN</option><option>ADMIN</option><option>ACCOUNT_OFFICER</option><option>LOGISTIC_ADMIN</option><option>RIDER</option><option>MARKETER</option></select><select id="userStatus"><option value="">All statuses</option><option>PENDING_VERIFICATION</option><option>PENDING_APPROVAL</option><option>ACTIVE</option><option>SUSPENDED</option><option>DISABLED</option><option>REJECTED</option></select><button id="searchUsers" class="primary-button small">Search</button></div></div><div id="usersTable" class="table-wrap loading-block">Loading…</div></div>
+      </section>
+
+
+      <section id="marketers" class="page-section">
+        <div class="marketer-admin-grid">
+          <div class="panel">
+            <div class="panel-head"><div><p class="eyebrow">Marketing team</p><h2>Create marketer</h2></div></div>
+            <p class="marketer-note">The marketer receives an OTP by email and activates the account by creating a password.</p>
+            <form id="createMarketerForm" class="marketer-form">
+              <input name="fullName" placeholder="Full name" required>
+              <input name="email" type="email" placeholder="Email address" required>
+              <input name="phoneNumber" placeholder="Phone number" required>
+              <button class="primary-button" type="submit">Create and send OTP</button>
+              <div id="marketerFormMessage"></div>
+            </form>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><div><p class="eyebrow">Accounts</p><h2>Marketers</h2></div><button id="refreshMarketers" class="secondary-button"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
+            <div id="marketersList" class="marketer-list loading-block">Loading…</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="orders" class="page-section">
+        <div class="panel"><div class="panel-head"><div><p class="eyebrow">Fulfilment</p><h2>All orders</h2></div><button id="refreshOrders" class="secondary-button"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div><div id="ordersTable" class="table-wrap loading-block">Loading…</div></div>
+      </section>
+
+      <section id="payments" class="page-section">
+        <div class="panel"><div class="panel-head responsive"><div><p class="eyebrow">Reconciliation</p><h2>Payment proofs</h2></div><div class="filters"><select id="paymentStatus"><option value="">All statuses</option><option>PENDING</option><option>CONFIRMED</option><option>REJECTED</option></select><button id="refreshPayments" class="secondary-button"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div></div><div id="paymentsTable" class="table-wrap loading-block">Loading…</div></div>
+      </section>
+    </main>
+  </div>
+
+ <div
+  id="modal"
+  class="admin-modal"
+  hidden
+  aria-hidden="true"
+>
+  <div
+    class="admin-modal-overlay"
+    data-modal-close
+  ></div>
+
+  <div
+    class="admin-modal-card"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modalTitle"
+  >
+    <button
+      id="modalClose"
+      class="modal-close"
+      type="button"
+      aria-label="Close"
+    >
+      <i class="bi bi-x-lg"></i>
+    </button>
+
+    <div id="modalContent"></div>
+  </div>
+</div>
+<script src="/assets/js/admin-api.js?v=30"></script>
+<script src="/assets/js/admin-dashboard.js?v=31"></script>
+<script src="/assets/js/admin-marketers.js?v=2"></script>
+</body>
+</html>

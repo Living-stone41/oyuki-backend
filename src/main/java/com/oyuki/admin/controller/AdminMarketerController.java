@@ -1,5 +1,6 @@
 package com.oyuki.admin.controller;
 
+<<<<<<< HEAD
 import com.oyuki.referral.service.ReferralService;
 import com.oyuki.user.entity.User;
 import com.oyuki.user.enums.Role;
@@ -9,11 +10,25 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+=======
+import com.oyuki.admin.dto.AdminMarketerResponse;
+import com.oyuki.admin.dto.CreateMarketerRequest;
+import com.oyuki.admin.service.AdminMarketerService;
+import com.oyuki.common.response.ApiResponse;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+>>>>>>> 1f72347 (Update Oyuki backend)
 
 @RestController
 @RequestMapping("/api/admin/marketers")
 @RequiredArgsConstructor
 public class AdminMarketerController {
+<<<<<<< HEAD
 
     private final UserRepository userRepository;
     private final ReferralService referralService;
@@ -52,5 +67,18 @@ public class AdminMarketerController {
         user.setRole(fallbackRole);
         userRepository.save(user);
         return Map.of("userId", user.getId(), "role", user.getRole(), "message", "Marketer access removed");
+=======
+    private final AdminMarketerService service;
+
+    @PostMapping
+    public ResponseEntity<ApiResponse<AdminMarketerResponse>> create(@Valid @RequestBody CreateMarketerRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
+                "Marketer created. An OTP has been sent for account activation.", service.create(request)));
+    }
+
+    @GetMapping
+    public ApiResponse<List<AdminMarketerResponse>> list() {
+        return ApiResponse.success("Marketers retrieved successfully", service.list());
+>>>>>>> 1f72347 (Update Oyuki backend)
     }
 }

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Marketer Dashboard | Oyuki</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css?v=marketer2">
+</head>
+<body class="wallet-page">
+<div id="oy-navbar"></div>
+<main class="wallet-shell">
+  <header class="wallet-header"><div><p class="wallet-eyebrow">OYUKI MARKETER</p><h1>Marketing dashboard</h1><p>Earn ₦2,000 for every OTP-verified Seller or Kitchen that registers with your code.</p></div><a class="wallet-referral-link" href="wallet.html"><i class="bi bi-wallet2"></i> Wallet</a></header>
+  <section class="referral-hero"><div><span class="referral-label">Your marketing code</span><strong id="marketerCode">Loading…</strong><p>Only verified Seller and Kitchen registrations count.</p></div><div class="referral-buttons"><button id="copyMarketerLink"><i class="bi bi-copy"></i> Copy link</button><button id="shareMarketerLink"><i class="bi bi-share"></i> Share</button></div></section>
+  <section class="referral-stats"><article><span>Qualified sign-ups</span><strong id="qualifiedCount">0</strong></article><article><span>Withdrawal progress</span><strong id="progressCount">0 / 20</strong></article><article><span>Total earned</span><strong id="marketerEarned">₦0.00</strong></article></section>
+  <section class="wallet-section"><div class="wallet-section-head"><div><h3>Withdrawal eligibility</h3><p id="eligibilityText">Loading your referral progress…</p></div><a id="withdrawLink" class="btn btn-brand" href="wallet.html">Open wallet</a></div><div class="referral-progress"><div id="marketerProgressBar"></div></div></section>
+  <section class="wallet-section"><div class="wallet-section-head"><div><h3>Referral history</h3><p>Your Seller and Kitchen sign-ups</p></div></div><div id="marketerHistory" class="wallet-transactions"><div class="wallet-empty"><i class="bi bi-people"></i><h4>No sign-ups yet</h4><p>Share your marketer link to begin.</p></div></div></section>
+</main>
+<div id="oy-footer"></div>
+<script src="assets/js/app.js?v=marketer2"></script><script src="assets/js/marketer-dashboard.js?v=marketer2"></script>
+</body></html>

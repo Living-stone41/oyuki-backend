@@ -25,11 +25,17 @@
     pendingBalance: 0,
     referralEarnings: 0,
     transactions: [],
+<<<<<<< HEAD
     qualifiedReferrals: 0,
     minimumWithdrawalReferrals: 20,
     remainingForWithdrawal: 20,
     withdrawalEligible: false,
     referrerType: "NORMAL"
+=======
+    qualifiedReferralCount: 0,
+    minimumWithdrawalReferrals: 20,
+    withdrawalEligible: false
+>>>>>>> 1f72347 (Update Oyuki backend)
   };
 
   function getToken() {
@@ -199,6 +205,7 @@
       );
     }
 
+<<<<<<< HEAD
     const eligibilityMessage = q("#walletEligibilityMessage");
     const withdrawButton = q("#withdrawWalletButton");
     const qualified = Number(state.qualifiedReferrals || 0);
@@ -217,6 +224,22 @@
       withdrawButton.title = !state.withdrawalEligible && Number(state.referralEarnings || 0) > 0
         ? "Reach the referral sign-up requirement before withdrawing referral earnings"
         : "Withdraw funds";
+=======
+    const qualified = Number(state.qualifiedReferralCount || 0);
+    const minimum = Number(state.minimumWithdrawalReferrals || 20);
+    const progress = q("#walletReferralProgress");
+    const progressBar = q("#walletProgressBar");
+    const eligibilityText = q("#walletEligibilityText");
+    const withdrawButton = q("#walletWithdrawButton");
+    if (progress) progress.textContent = `${qualified} / ${minimum}`;
+    if (progressBar) progressBar.style.width = `${Math.min(100, (qualified / minimum) * 100)}%`;
+    if (eligibilityText) eligibilityText.textContent = state.withdrawalEligible
+      ? "You can request a withdrawal."
+      : `You need ${Math.max(0, minimum - qualified)} more qualified referrals before withdrawing.`;
+    if (withdrawButton) {
+      withdrawButton.disabled = !state.withdrawalEligible;
+      withdrawButton.title = state.withdrawalEligible ? "Withdraw funds" : eligibilityText?.textContent || "Withdrawal locked";
+>>>>>>> 1f72347 (Update Oyuki backend)
     }
 
     renderTransactions(
@@ -338,6 +361,10 @@
   }
 
   function openModal(type) {
+    if (type === "withdraw" && !state.withdrawalEligible) {
+      showToast(`You need ${Math.max(0, Number(state.minimumWithdrawalReferrals || 20) - Number(state.qualifiedReferralCount || 0))} more qualified referrals before withdrawing.`, "error");
+      return;
+    }
     const modal = q("#walletModal");
     const modalContent = q(
       "#walletModalContent"

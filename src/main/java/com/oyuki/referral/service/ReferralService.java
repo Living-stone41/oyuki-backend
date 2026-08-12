@@ -6,6 +6,7 @@ import com.oyuki.referral.repository.ReferralRepository;
 import com.oyuki.user.entity.User;
 import com.oyuki.user.enums.Role;
 import com.oyuki.user.repository.UserRepository;
+import com.oyuki.user.enums.Role;
 import com.oyuki.wallet.entity.SellerWallet;
 import com.oyuki.wallet.entity.WalletTransaction;
 import com.oyuki.wallet.enums.WalletTransactionDirection;
@@ -35,6 +36,12 @@ public class ReferralService {
 
     @Value("${app.referral.marketer-reward:2000}")
     private BigDecimal marketerReward;
+<<<<<<< HEAD
+=======
+
+    @Value("${app.referral.minimum-withdrawal-referrals:20}")
+    private int minimumWithdrawalReferrals;
+>>>>>>> 1f72347 (Update Oyuki backend)
 
     @Value("${app.referral.referred-user-reward:0}")
     private BigDecimal referredUserReward;
@@ -100,6 +107,7 @@ public class ReferralService {
         referral.setStatus(ReferralStatus.QUALIFIED);
         referral.setQualifiedAt(LocalDateTime.now());
 
+<<<<<<< HEAD
         // Marketers earn only for verified Seller/Farmer or Kitchen accounts.
         if (marketer && !eligibleBusinessReferral) {
             referral.setReferrerReward(BigDecimal.ZERO);
@@ -116,6 +124,15 @@ public class ReferralService {
                         : "Referral reward for " + referredUser.getFullName(),
                 "REFERRAL-" + referral.getId() + "-REFERRER",
                 WalletTransactionType.REFERRAL_REWARD);
+=======
+        BigDecimal earnedReward = rewardFor(referral.getReferrer(), referredUser);
+        if (earnedReward.signum() > 0) {
+            credit(referral.getReferrer(), earnedReward,
+                    "Referral reward for " + referredUser.getFullName(),
+                    "REFERRAL-" + referral.getId() + "-REFERRER",
+                    WalletTransactionType.REFERRAL_REWARD);
+        }
+>>>>>>> 1f72347 (Update Oyuki backend)
 
         if (referredUserReward.signum() > 0) {
             credit(referredUser, referredUserReward,
@@ -124,7 +141,11 @@ public class ReferralService {
                     WalletTransactionType.WELCOME_REWARD);
         }
 
+<<<<<<< HEAD
         referral.setReferrerReward(reward);
+=======
+        referral.setReferrerReward(earnedReward);
+>>>>>>> 1f72347 (Update Oyuki backend)
         referral.setReferredUserReward(referredUserReward);
         referral.setStatus(ReferralStatus.REWARDED);
         referral.setRewardedAt(LocalDateTime.now());
@@ -140,7 +161,7 @@ public class ReferralService {
         boolean marketer = user.getRole() == Role.MARKETER;
 
         long verified = referrals.stream()
-                .filter(r -> r.getStatus() == ReferralStatus.QUALIFIED || r.getStatus() == ReferralStatus.REWARDED)
+                .filter(r -> isQualifiedForReferrer(user, r))
                 .count();
         long qualified = qualifiedWithdrawalReferralCount(user, referrals);
 
@@ -162,9 +183,20 @@ public class ReferralService {
         result.put("remainingForWithdrawal", Math.max(0, minimumWithdrawalReferrals - qualified));
         result.put("withdrawalEligible", qualified >= minimumWithdrawalReferrals);
         result.put("totalEarned", totalEarned);
+<<<<<<< HEAD
         result.put("rewardPerVerifiedReferral", marketer ? marketerReward : normalReward);
         result.put("eligibleRoles", marketer ? List.of(Role.SELLER, Role.KITCHEN) : List.of("ANY_VERIFIED_USER"));
         result.put("history", referrals.stream().map(this::mapReferral).toList());
+=======
+        result.put("rewardPerVerifiedReferral", user.getRole() == Role.MARKETER ? marketerReward : normalReward);
+        result.put("minimumWithdrawalReferrals", minimumWithdrawalReferrals);
+        result.put("qualifiedReferralCount", verified);
+        result.put("remainingForWithdrawal", Math.max(0, minimumWithdrawalReferrals - verified));
+        result.put("withdrawalEligible", verified >= minimumWithdrawalReferrals);
+        result.put("marketer", user.getRole() == Role.MARKETER);
+        result.put("eligibleReferredRoles", user.getRole() == Role.MARKETER ? List.of("SELLER", "KITCHEN") : List.of("ALL_VERIFIED_USERS"));
+        result.put("history", history);
+>>>>>>> 1f72347 (Update Oyuki backend)
         return result;
     }
 
@@ -215,6 +247,7 @@ public class ReferralService {
         }
     }
 
+<<<<<<< HEAD
     private long qualifiedWithdrawalReferralCount(User referrer, List<Referral> referrals) {
         return referrals.stream()
                 .filter(r -> r.getStatus() == ReferralStatus.REWARDED)
@@ -224,6 +257,39 @@ public class ReferralService {
                 .count();
     }
 
+=======
+
+    @Transactional(readOnly = true)
+    public long qualifiedCountForWithdrawal(User referrer) {
+        return referralRepository.findAllByReferrer_IdOrderByCreatedAtDesc(referrer.getId()).stream()
+                .filter(r -> isQualifiedForReferrer(referrer, r))
+                .count();
+    }
+
+    public int minimumWithdrawalReferrals() {
+        return minimumWithdrawalReferrals;
+    }
+
+    private BigDecimal rewardFor(User referrer, User referredUser) {
+        if (referrer.getRole() == Role.MARKETER) {
+            return referredUser.getRole() == Role.SELLER || referredUser.getRole() == Role.KITCHEN
+                    ? marketerReward : BigDecimal.ZERO;
+        }
+        return normalReward;
+    }
+
+    private boolean isQualifiedForReferrer(User referrer, Referral referral) {
+        if (referral.getStatus() != ReferralStatus.REWARDED && referral.getStatus() != ReferralStatus.QUALIFIED) return false;
+        if (referrer.getRole() == Role.MARKETER) {
+            Role role = referral.getReferredUser().getRole();
+            return (role == Role.SELLER || role == Role.KITCHEN)
+                    && referral.getReferrerReward() != null
+                    && referral.getReferrerReward().compareTo(BigDecimal.ZERO) > 0;
+        }
+        return referral.getReferrerReward() != null && referral.getReferrerReward().compareTo(BigDecimal.ZERO) > 0;
+    }
+
+>>>>>>> 1f72347 (Update Oyuki backend)
     private void credit(User user, BigDecimal amount, String description,
                         String reference, WalletTransactionType type) {
         if (amount == null || amount.signum() <= 0 || transactionRepository.existsByReference(reference)) return;

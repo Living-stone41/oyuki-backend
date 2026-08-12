@@ -70,6 +70,7 @@ public class SecurityConfig {
                                 "/register.html",
                                 "/verify-otp.html",
                                 "/forgot-password.html",
+                                "/marketer-activate.html",
                                 "/reset-password.html",
                                 "/privacy.html",
                                 "/terms.html",

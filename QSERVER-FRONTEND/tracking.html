@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Track your order | Oyuki</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head><body>
+<div id="oy-navbar"></div>
+<section class="section"><div class="container" id="body"></div></section>
+<div id="oy-footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+
+document.addEventListener('DOMContentLoaded',async()=>{if(!Oyuki.Auth.require('CUSTOMER'))return;const id=new URLSearchParams(location.search).get('id'),body=document.getElementById('body');try{const o=await Oyuki.Orders.get(id);body.innerHTML=`<div class="row g-4"><div class="col-lg-5"><span class="eyebrow">Order ${Oyuki.escapeHtml(o.orderNumber||o.id)}</span><h2 class="mt-1">${Oyuki.escapeHtml(o.status)}</h2><p class="text-muted">Placed ${Oyuki.date(o.createdAt)}</p><div class="panel"><h6>Delivery</h6><p class="text-muted mb-0 small">${Oyuki.escapeHtml(o.recipientName)}<br>${Oyuki.escapeHtml(o.addressLine)}, ${Oyuki.escapeHtml(o.area)}, ${Oyuki.escapeHtml(o.lga)}, ${Oyuki.escapeHtml(o.state)}<br>${Oyuki.escapeHtml(o.recipientPhone)}</p></div></div><div class="col-lg-7"><div class="panel"><h5>Order items</h5>${(o.items||[]).map(i=>`<div class="d-flex justify-content-between py-2 border-bottom"><span>${Oyuki.escapeHtml(i.productName)} × ${i.quantity}<br><small class="text-muted">${Oyuki.escapeHtml(i.status)}</small></span><span>${Oyuki.fmt(i.lineTotal)}</span></div>`).join('')}<div class="d-flex justify-content-between mt-3"><span>Subtotal</span><span>${Oyuki.fmt(o.subtotal)}</span></div><div class="d-flex justify-content-between"><span>Delivery</span><span>${Oyuki.fmt(o.deliveryFee)}</span></div>${Number(o.discountAmount||0)?`<div class="d-flex justify-content-between text-success"><span>${Oyuki.escapeHtml(o.couponCode||'Coupon')}</span><span>-${Oyuki.fmt(o.discountAmount)}</span></div>`:''}<hr><div class="d-flex justify-content-between fw-bold fs-5"><span>Total</span><span>${Oyuki.fmt(o.totalAmount)}</span></div><div class="mt-3"><span class="badge-soft">Payment: ${Oyuki.escapeHtml(o.paymentStatus)}</span></div></div></div></div>`;}catch(error){body.innerHTML=`<div class="alert alert-danger">${Oyuki.escapeHtml(error.message)}</div>`;}});
+
+</script>
+</body></html>

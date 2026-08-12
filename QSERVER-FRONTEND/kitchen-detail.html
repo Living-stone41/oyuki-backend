@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kitchen Details | Oyuki</title>
+<meta name="description" content="View kitchen menu, opening hours, ratings, and place your order.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head><body>
+<div id="oy-navbar"></div>
+<div id="body" class="container section"></div>
+<div id="oy-footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+
+document.addEventListener('DOMContentLoaded',async()=>{const id=Number(new URLSearchParams(location.search).get('id')),body=document.getElementById('body');try{const meals=(await Oyuki.Products.list({productType:'READY_MEAL'})).filter(p=>Number(p.ownerId)===id);if(!meals.length){body.innerHTML='<p>Kitchen not found or it has no active meals. <a href="kitchens.html">Back</a></p>';return;}body.innerHTML=`<span class="eyebrow">Kitchen</span><h1>${Oyuki.escapeHtml(meals[0].ownerName)}</h1><p class="text-muted">Available ready meals from this kitchen.</p><div class="row mt-4">${meals.map(Oyuki.productCard).join('')}</div>`;}catch(error){body.innerHTML=`<div class="alert alert-danger">${Oyuki.escapeHtml(error.message)}</div>`;}});
+
+</script>
+</body></html>

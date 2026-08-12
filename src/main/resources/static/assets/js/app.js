@@ -317,7 +317,11 @@
     }
 
     if (value === 'MARKETER') {
+<<<<<<< HEAD
       return '/referrals.html';
+=======
+      return '/marketer.html';
+>>>>>>> 1f72347 (Update Oyuki backend)
     }
 
     if (value === 'ADMIN') {
