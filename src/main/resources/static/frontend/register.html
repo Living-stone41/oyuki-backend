@@ -96,8 +96,8 @@
         </h2>
 
         <p>
-          Create a customer or seller account.
-          Sellers complete verification before products
+          Create a customer, seller or kitchen account.
+          Providers complete verification before products
           become public.
         </p>
       </div>
@@ -105,6 +105,7 @@
       <div class="oy-auth-points">
         <span>Customer</span>
         <span>Seller</span>
+        <span>Kitchen</span>
       </div>
 
     </section>
@@ -151,6 +152,15 @@
           >
             <i class="bi bi-shop"></i>
             Seller
+          </button>
+
+          <button
+            class="oy-role"
+            type="button"
+            data-role="KITCHEN"
+          >
+            <i class="bi bi-egg-fried"></i>
+            Kitchen
           </button>
 
         </div>
@@ -692,7 +702,8 @@
         if (
           [
             'CUSTOMER',
-            'SELLER'
+            'SELLER',
+            'KITCHEN'
           ].includes(roleFromUrl)
         ) {
           setRole(roleFromUrl);

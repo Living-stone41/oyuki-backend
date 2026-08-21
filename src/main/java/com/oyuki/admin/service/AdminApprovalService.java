@@ -4,9 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oyuki.admin.dto.AdminApplicationResponse;
 import com.oyuki.admin.dto.RejectApplicationRequest;
-import com.oyuki.kitchen.entity.KitchenProfile;
-import com.oyuki.kitchen.repository.KitchenProfileRepository;
-import com.oyuki.kitchen.repository.KitchenImageRepository;
 import com.oyuki.seller.entity.SellerProfile;
 import com.oyuki.seller.repository.SellerProfileRepository;
 import com.oyuki.user.entity.User;
@@ -40,8 +37,6 @@ public class AdminApprovalService {
 
     private final UserRepository userRepository;
     private final SellerProfileRepository sellerProfileRepository;
-    private final KitchenProfileRepository kitchenProfileRepository;
-    private final KitchenImageRepository kitchenImageRepository;
     private final ObjectMapper objectMapper;
 
     /*
@@ -56,15 +51,11 @@ public class AdminApprovalService {
     public AdminApprovalService(
             UserRepository userRepository,
             SellerProfileRepository sellerProfileRepository,
-            KitchenProfileRepository kitchenProfileRepository,
-            KitchenImageRepository kitchenImageRepository,
             ObjectMapper objectMapper,
             @Value("${app.upload.root:uploads}") String uploadDirectory
     ) {
         this.userRepository = userRepository;
         this.sellerProfileRepository = sellerProfileRepository;
-        this.kitchenProfileRepository = kitchenProfileRepository;
-        this.kitchenImageRepository = kitchenImageRepository;
         this.objectMapper = objectMapper;
 
         this.uploadRoot = Paths.get(uploadDirectory)
@@ -81,21 +72,10 @@ public class AdminApprovalService {
                         AccountStatus.PENDING_APPROVAL
                 );
 
-        List<User> pendingKitchens =
-                userRepository.findAllByRoleAndStatus(
-                        Role.KITCHEN,
-                        AccountStatus.PENDING_APPROVAL
-                );
-
         List<AdminApplicationResponse> applications =
                 new ArrayList<>();
 
         pendingSellers
-                .stream()
-                .map(this::convertToResponse)
-                .forEach(applications::add);
-
-        pendingKitchens
                 .stream()
                 .map(this::convertToResponse)
                 .forEach(applications::add);
@@ -116,7 +96,8 @@ public class AdminApprovalService {
     public AdminApplicationResponse getApplication(
             Long userId
     ) {
-        User user = getSellerOrKitchen(userId);
+
+        User user = getSeller(userId);
 
         return convertToResponse(user);
     }
@@ -125,7 +106,8 @@ public class AdminApprovalService {
     public AdminApplicationResponse approveApplication(
             Long userId
     ) {
-        User user = getSellerOrKitchen(userId);
+
+        User user = getSeller(userId);
 
         validatePendingApplication(user);
         validateProfileCompleted(user);
@@ -144,7 +126,8 @@ public class AdminApprovalService {
             Long userId,
             RejectApplicationRequest request
     ) {
-        User user = getSellerOrKitchen(userId);
+
+        User user = getSeller(userId);
 
         validatePendingApplication(user);
 
@@ -180,14 +163,15 @@ public class AdminApprovalService {
     }
 
     /*
-     * Downloads the provider's uploaded identification document.
+     * Downloads the seller's uploaded identification document.
      */
     @Transactional(readOnly = true)
     public ResponseEntity<Resource> downloadIdDocument(
             Long userId
     ) {
+
         User user =
-                getSellerOrKitchen(userId);
+                getSeller(userId);
 
         String documentUrl =
                 getIdDocumentUrl(user);
@@ -197,7 +181,7 @@ public class AdminApprovalService {
                 documentUrl.isBlank()
         ) {
             throw new IllegalStateException(
-                    "The provider has not uploaded an identification document"
+                    "The seller has not uploaded an identification document"
             );
         }
 
@@ -247,18 +231,15 @@ public class AdminApprovalService {
     }
 
     /*
-     * Downloads the complete application details as a JSON file.
-     *
-     * This includes the user details, business profile, address,
-     * bank details and verification information returned by
-     * AdminApplicationResponse.
+     * Downloads the complete seller application details as a JSON file.
      */
     @Transactional(readOnly = true)
     public ResponseEntity<Resource> downloadApplication(
             Long userId
     ) {
+
         User user =
-                getSellerOrKitchen(userId);
+                getSeller(userId);
 
         AdminApplicationResponse application =
                 convertToResponse(user);
@@ -266,6 +247,7 @@ public class AdminApprovalService {
         byte[] content;
 
         try {
+
             String json =
                     objectMapper
                             .writerWithDefaultPrettyPrinter()
@@ -279,6 +261,7 @@ public class AdminApprovalService {
                     );
 
         } catch (JsonProcessingException exception) {
+
             throw new IllegalStateException(
                     "The application file could not be generated",
                     exception
@@ -320,9 +303,10 @@ public class AdminApprovalService {
                 .body(resource);
     }
 
-    private User getSellerOrKitchen(
+    private User getSeller(
             Long userId
     ) {
+
         User user =
                 userRepository
                         .findById(userId)
@@ -333,11 +317,10 @@ public class AdminApprovalService {
                         );
 
         if (
-                user.getRole() != Role.SELLER &&
-                user.getRole() != Role.KITCHEN
+                user.getRole() != Role.SELLER
         ) {
             throw new IllegalStateException(
-                    "This user is not a seller or kitchen"
+                    "This user is not a seller"
             );
         }
 
@@ -347,10 +330,12 @@ public class AdminApprovalService {
     private void validatePendingApplication(
             User user
     ) {
+
         if (
                 user.getStatus() !=
                 AccountStatus.PENDING_APPROVAL
         ) {
+
             throw new IllegalStateException(
                     "This application is not awaiting approval"
             );
@@ -360,44 +345,20 @@ public class AdminApprovalService {
     private void validateProfileCompleted(
             User user
     ) {
-        if (
-                user.getRole() ==
-                Role.SELLER
-        ) {
-            SellerProfile profile =
-                    sellerProfileRepository
-                            .findByUserId(
-                                    user.getId()
-                            )
-                            .orElseThrow(() ->
-                                    new IllegalStateException(
-                                            "The seller must complete their profile before approval"
-                                    )
-                            );
 
-            requireApprovalFields(
-                    profile.getBusinessName(),
-                    profile.getAddressLine(),
-                    profile.getProfileImageUrl(),
-                    profile.getIdDocumentUrl()
-            );
-
-            return;
-        }
-
-        KitchenProfile profile =
-                kitchenProfileRepository
+        SellerProfile profile =
+                sellerProfileRepository
                         .findByUserId(
                                 user.getId()
                         )
                         .orElseThrow(() ->
                                 new IllegalStateException(
-                                        "The kitchen must complete its profile before approval"
+                                        "The seller must complete their profile before approval"
                                 )
                         );
 
         requireApprovalFields(
-                profile.getKitchenName(),
+                profile.getBusinessName(),
                 profile.getAddressLine(),
                 profile.getProfileImageUrl(),
                 profile.getIdDocumentUrl()
@@ -410,10 +371,12 @@ public class AdminApprovalService {
             String profileImageUrl,
             String idDocumentUrl
     ) {
+
         if (
                 businessName == null ||
                 businessName.isBlank()
         ) {
+
             throw new IllegalStateException(
                     "A business name is required before approval"
             );
@@ -423,6 +386,7 @@ public class AdminApprovalService {
                 addressLine == null ||
                 addressLine.isBlank()
         ) {
+
             throw new IllegalStateException(
                     "A business address is required before approval"
             );
@@ -432,6 +396,7 @@ public class AdminApprovalService {
                 profileImageUrl == null ||
                 profileImageUrl.isBlank()
         ) {
+
             throw new IllegalStateException(
                     "A profile picture is required before approval"
             );
@@ -441,6 +406,7 @@ public class AdminApprovalService {
                 idDocumentUrl == null ||
                 idDocumentUrl.isBlank()
         ) {
+
             throw new IllegalStateException(
                     "An identification document is required before approval"
             );
@@ -450,32 +416,15 @@ public class AdminApprovalService {
     private String getIdDocumentUrl(
             User user
     ) {
-        if (
-                user.getRole() ==
-                Role.SELLER
-        ) {
-            SellerProfile profile =
-                    sellerProfileRepository
-                            .findByUserId(
-                                    user.getId()
-                            )
-                            .orElseThrow(() ->
-                                    new IllegalStateException(
-                                            "Seller profile was not found"
-                                    )
-                            );
 
-            return profile.getIdDocumentUrl();
-        }
-
-        KitchenProfile profile =
-                kitchenProfileRepository
+        SellerProfile profile =
+                sellerProfileRepository
                         .findByUserId(
                                 user.getId()
                         )
                         .orElseThrow(() ->
                                 new IllegalStateException(
-                                        "Kitchen profile was not found"
+                                        "Seller profile was not found"
                                 )
                         );
 
@@ -485,20 +434,42 @@ public class AdminApprovalService {
     private Path resolveUploadedFile(
             String storedUrl
     ) {
-        String cleanValue = storedUrl.trim().replace("\\", "/");
-        String filename = Path.of(cleanValue).getFileName().toString();
-        Path documentFolder = uploadRoot.resolve("documents").normalize();
-        Path resolvedPath = documentFolder.resolve(filename).normalize();
+
+        String cleanValue =
+                storedUrl
+                        .trim()
+                        .replace("\\", "/");
+
+        String filename =
+                Path.of(cleanValue)
+                        .getFileName()
+                        .toString();
+
+        Path documentFolder =
+                uploadRoot
+                        .resolve("documents")
+                        .normalize();
+
+        Path resolvedPath =
+                documentFolder
+                        .resolve(filename)
+                        .normalize();
+
         if (!resolvedPath.startsWith(documentFolder)) {
-            throw new IllegalStateException("Invalid document path");
+            throw new IllegalStateException(
+                    "Invalid document path"
+            );
         }
+
         return resolvedPath;
     }
 
     private String detectContentType(
             Path path
     ) {
+
         try {
+
             String detected =
                     Files.probeContentType(
                             path
@@ -524,9 +495,13 @@ public class AdminApprovalService {
     private long getFileSize(
             Path path
     ) {
+
         try {
+
             return Files.size(path);
+
         } catch (IOException exception) {
+
             throw new IllegalStateException(
                     "The document size could not be determined",
                     exception
@@ -537,6 +512,7 @@ public class AdminApprovalService {
     private String createSafeFilename(
             String value
     ) {
+
         if (
                 value == null ||
                 value.isBlank()
@@ -567,10 +543,12 @@ public class AdminApprovalService {
     private AdminApplicationResponse convertToResponse(
             User user
     ) {
+
         if (
                 user.getRole() ==
                 Role.SELLER
         ) {
+
             return sellerProfileRepository
                     .findByUserId(
                             user.getId()
@@ -578,23 +556,6 @@ public class AdminApprovalService {
                     .map(
                             AdminApplicationResponse::fromSeller
                     )
-                    .orElseGet(() ->
-                            AdminApplicationResponse
-                                    .incomplete(user)
-                    );
-        }
-
-        if (
-                user.getRole() ==
-                Role.KITCHEN
-        ) {
-            return kitchenProfileRepository
-                    .findByUserId(
-                            user.getId()
-                    )
-                    .map(profile -> AdminApplicationResponse.fromKitchen(
-                            profile, kitchenImageRepository.findAllByKitchenProfileIdOrderByDisplayOrderAscIdAsc(profile.getId())
-                    ))
                     .orElseGet(() ->
                             AdminApplicationResponse
                                     .incomplete(user)
