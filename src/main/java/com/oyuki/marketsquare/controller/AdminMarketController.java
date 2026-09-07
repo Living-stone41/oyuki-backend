@@ -1,1 +1,40 @@
-package com.oyuki.marketsquare.controller; import com.oyuki.marketsquare.entity.*; import com.oyuki.marketsquare.repository.*; import lombok.RequiredArgsConstructor; import org.springframework.web.bind.annotation.*; @RestController @RequestMapping("/api/admin/markets") @RequiredArgsConstructor public class AdminMarketController { private final StateRepository states; private final LocalGovernmentRepository lgas; private final MarketRepository markets; @PostMapping("/states") public State addState(@RequestBody State x){return states.save(x);} @PostMapping("/lgas") public LocalGovernment addLga(@RequestBody LocalGovernment x){return lgas.save(x);} @PostMapping public Market addMarket(@RequestBody Market x){return markets.save(x);} @PutMapping("/{id}") public Market update(@PathVariable Long id,@RequestBody Market x){x.setId(id);return markets.save(x);} }
+package com.oyuki.marketsquare.controller;
+
+import com.oyuki.marketsquare.entity.*;
+import com.oyuki.marketsquare.repository.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/admin/markets")
+@RequiredArgsConstructor
+public class AdminMarketController {
+    private final StateRepository states;
+    private final LocalGovernmentRepository lgas;
+    private final MarketRepository markets;
+
+    @GetMapping("/states")
+    public List<State> statesList() { return states.findAllByActiveTrueOrderByNameAsc(); }
+
+    @GetMapping("/lgas")
+    public List<LocalGovernment> lgasList(@RequestParam(required = false) Long stateId) {
+        return stateId == null ? lgas.findAllByActiveTrueOrderByNameAsc() : lgas.findAllByStateIdAndActiveTrueOrderByNameAsc(stateId);
+    }
+
+    @GetMapping
+    public List<Market> marketsList() { return markets.findAllByActiveTrueOrderByNameAsc(); }
+
+    @PostMapping("/states")
+    public State addState(@RequestBody State x) { return states.save(x); }
+
+    @PostMapping("/lgas")
+    public LocalGovernment addLga(@RequestBody LocalGovernment x) { return lgas.save(x); }
+
+    @PostMapping
+    public Market addMarket(@RequestBody Market x) { return markets.save(x); }
+
+    @PutMapping("/{id}")
+    public Market update(@PathVariable Long id, @RequestBody Market x) { x.setId(id); return markets.save(x); }
+}

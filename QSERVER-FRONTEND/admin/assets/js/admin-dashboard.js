@@ -1,16 +1,17 @@
 (function () {
   'use strict';
 
-  /*
-   * Supports both names used by previous admin-api.js versions.
-   */
+  /* =========================================================
+     API
+  ========================================================= */
+
   const LoadedApi =
     window.OyukiAdminApi ||
     window.AdminApi;
 
   if (!LoadedApi) {
     console.error(
-      'admin-api.js did not load or did not create an API object.'
+      'admin-api.js did not load.'
     );
 
     document
@@ -23,11 +24,8 @@
     return;
   }
 
-  /*
-   * Normalises the API object so this dashboard works with
-   * both the old and new admin-api.js structures.
-   */
   const Api = {
+
     get(path) {
       if (
         typeof LoadedApi.get ===
@@ -116,15 +114,15 @@
     }
   };
 
+  /* =========================================================
+     ELEMENTS
+  ========================================================= */
+
   const elements = {
+
     sidebar:
       document.getElementById(
         'sidebar'
-      ),
-
-    mobileOverlay:
-      document.getElementById(
-        'mobileOverlay'
       ),
 
     menuButton:
@@ -173,28 +171,34 @@
       )
   };
 
+  /* =========================================================
+     HELPERS
+  ========================================================= */
+
   function escapeHtml(value) {
-    return String(value ?? '')
-      .replace(
-        /[&<>'"]/g,
-        character => ({
-          '&': '&amp;',
-          '<': '&lt;',
-          '>': '&gt;',
-          "'": '&#39;',
-          '"': '&quot;'
-        })[character]
-      );
+
+    return String(
+      value ?? ''
+    ).replace(
+      /[&<>'"]/g,
+      character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+      })[character]
+    );
   }
 
   function unwrap(payload) {
+
     if (
       payload &&
-      Object.prototype
-        .hasOwnProperty.call(
-          payload,
-          'data'
-        )
+      Object.prototype.hasOwnProperty.call(
+        payload,
+        'data'
+      )
     ) {
       return payload.data;
     }
@@ -203,109 +207,106 @@
   }
 
   function arrayFrom(payload) {
+
     const value =
       unwrap(payload);
 
-    if (Array.isArray(value)) {
+    if (
+      Array.isArray(value)
+    ) {
       return value;
     }
 
-    if (
-      Array.isArray(
-        value?.content
-      )
-    ) {
-      return value.content;
-    }
+    const possibleArrays = [
+      'content',
+      'items',
+      'users',
+      'orders',
+      'payments',
+      'applications',
+      'marketers',
+      'agents',
+      'markets'
+    ];
 
-    if (
-      Array.isArray(
-        value?.items
-      )
+    for (
+      const key of possibleArrays
     ) {
-      return value.items;
-    }
 
-    if (
-      Array.isArray(
-        value?.users
-      )
-    ) {
-      return value.users;
-    }
-
-    if (
-      Array.isArray(
-        value?.orders
-      )
-    ) {
-      return value.orders;
-    }
-
-    if (
-      Array.isArray(
-        value?.payments
-      )
-    ) {
-      return value.payments;
-    }
-
-    if (
-      Array.isArray(
-        value?.applications
-      )
-    ) {
-      return value.applications;
+      if (
+        Array.isArray(
+          value?.[key]
+        )
+      ) {
+        return value[key];
+      }
     }
 
     return [];
   }
 
   function formatDate(value) {
+
     if (!value) {
       return '—';
     }
 
-    const parsedDate =
+    const date =
       new Date(value);
 
     if (
       Number.isNaN(
-        parsedDate.getTime()
+        date.getTime()
       )
     ) {
       return escapeHtml(value);
     }
 
-    return parsedDate
-      .toLocaleString();
+    return date
+      .toLocaleString(
+        'en-NG'
+      );
   }
 
   function formatMoney(value) {
-    return `₦${Number(value || 0)
-      .toLocaleString(
-        'en-NG',
-        {
-          maximumFractionDigits: 2
-        }
-      )}`;
+
+    return new Intl.NumberFormat(
+      'en-NG',
+      {
+        style: 'currency',
+        currency: 'NGN',
+        maximumFractionDigits: 2
+      }
+    ).format(
+      Number(value || 0)
+    );
   }
 
   function statusClass(status) {
-    return String(status || '')
+
+    return String(
+      status || ''
+    )
       .toLowerCase()
-      .replaceAll('_', '-');
+      .replaceAll(
+        '_',
+        '-'
+      );
   }
 
   function badge(status) {
+
     const value =
       String(
-        status || 'UNKNOWN'
+        status ||
+        'UNKNOWN'
       );
 
     return `
       <span
-        class="status-badge status-${statusClass(value)}"
+        class="status-badge status-${statusClass(
+          value
+        )}"
       >
         ${escapeHtml(value)}
       </span>
@@ -313,6 +314,7 @@
   }
 
   function loadingState() {
+
     return `
       <div class="loading-block">
         Loading…
@@ -321,6 +323,7 @@
   }
 
   function emptyState(message) {
+
     return `
       <div class="empty-state">
         ${escapeHtml(message)}
@@ -332,22 +335,29 @@
     message,
     type = 'success'
   ) {
-    if (!elements.globalAlert) {
+
+    if (
+      !elements.globalAlert
+    ) {
       return;
     }
 
-    elements.globalAlert.textContent =
+    elements.globalAlert
+      .textContent =
       message;
 
-    elements.globalAlert.className =
+    elements.globalAlert
+      .className =
       `alert ${type}`;
 
-    elements.globalAlert.hidden =
+    elements.globalAlert
+      .hidden =
       false;
 
-    window.setTimeout(
+    setTimeout(
       () => {
-        elements.globalAlert.hidden =
+        elements.globalAlert
+          .hidden =
           true;
       },
       4500
@@ -355,6 +365,7 @@
   }
 
   function showError(error) {
+
     console.error(error);
 
     showAlert(
@@ -364,7 +375,12 @@
     );
   }
 
+  /* =========================================================
+     MODAL
+  ========================================================= */
+
   function openModal(content) {
+
     if (
       !elements.modal ||
       !elements.modalContent
@@ -372,7 +388,8 @@
       return;
     }
 
-    elements.modalContent.innerHTML =
+    elements.modalContent
+      .innerHTML =
       content;
 
     elements.modal.hidden =
@@ -383,13 +400,17 @@
       'false'
     );
 
-    document.body.classList.add(
-      'modal-open'
-    );
+    document.body
+      .classList.add(
+        'modal-open'
+      );
   }
 
   function closeModal() {
-    if (!elements.modal) {
+
+    if (
+      !elements.modal
+    ) {
       return;
     }
 
@@ -405,51 +426,39 @@
       elements.modalContent
     ) {
       elements.modalContent
-        .innerHTML = '';
+        .innerHTML =
+        '';
     }
 
-    document.body.classList.remove(
-      'modal-open'
-    );
+    document.body
+      .classList.remove(
+        'modal-open'
+      );
   }
 
-  function openMobileMenu() {
-    elements.sidebar
-      ?.classList.add('open');
-
-    if (
-      elements.mobileOverlay
-    ) {
-      elements.mobileOverlay.hidden =
-        false;
-    }
-  }
-
-  function closeMobileMenu() {
-    elements.sidebar
-      ?.classList.remove('open');
-
-    if (
-      elements.mobileOverlay
-    ) {
-      elements.mobileOverlay.hidden =
-        true;
-    }
-  }
+  /* =========================================================
+     AUTH
+  ========================================================= */
 
   function currentAdmin() {
+
     try {
+
       return JSON.parse(
         localStorage.getItem(
           'oyuki_user'
-        ) || 'null'
+        ) ||
+        'null'
       );
+
     } catch {
+
       return null;
     }
   }
 
   function requireAdmin() {
+
     const token =
       localStorage.getItem(
         'oyuki_token'
@@ -466,6 +475,7 @@
       ).toUpperCase() !==
         'ADMIN'
     ) {
+
       window.location.replace(
         'admin-login.html'
       );
@@ -479,6 +489,7 @@
   function initialiseAdminName(
     user
   ) {
+
     const name =
       user?.fullName ||
       'Oyuki Administrator';
@@ -486,65 +497,103 @@
     if (
       elements.adminName
     ) {
-      elements.adminName.textContent =
+
+      elements.adminName
+        .textContent =
         name;
     }
 
     if (
       elements.adminInitial
     ) {
-      elements.adminInitial.textContent =
+
+      elements.adminInitial
+        .textContent =
         name
           .charAt(0)
           .toUpperCase();
     }
   }
 
+  /* =========================================================
+     NAVIGATION
+  ========================================================= */
+
   function showSection(
     sectionName
   ) {
+
     document
       .querySelectorAll(
         '.page-section'
       )
-      .forEach(section => {
-        section.classList.toggle(
-          'active',
-          section.id ===
-            sectionName
-        );
-      });
+      .forEach(
+        section => {
+
+          section.classList
+            .toggle(
+              'active',
+              section.id ===
+                sectionName
+            );
+        }
+      );
 
     document
       .querySelectorAll(
         '.nav-item[data-section]'
       )
-      .forEach(button => {
-        button.classList.toggle(
-          'active',
-          button.dataset.section ===
-            sectionName
-        );
-      });
+      .forEach(
+        button => {
+
+          button.classList
+            .toggle(
+              'active',
+              button.dataset
+                .section ===
+                sectionName
+            );
+        }
+      );
 
     const titles = {
-      overview: 'Overview',
+
+      overview:
+        'Overview',
+
       applications:
         'Applications',
-      users: 'Users',
-      orders: 'Orders',
-      payments: 'Payments'
+
+      users:
+        'Users',
+
+      marketers:
+        'Marketers',
+
+      marketAgents:
+        'Market Agents',
+
+      markets:
+        'Markets',
+
+      orders:
+        'Orders',
+
+      payments:
+        'Payments'
     };
 
     if (
       elements.pageTitle
     ) {
-      elements.pageTitle.textContent =
-        titles[sectionName] ||
+
+      elements.pageTitle
+        .textContent =
+        titles[
+          sectionName
+        ] ||
         'Overview';
     }
-
-    closeMobileMenu();
 
     if (
       sectionName ===
@@ -562,6 +611,27 @@
 
     if (
       sectionName ===
+      'marketers'
+    ) {
+      loadMarketers();
+    }
+
+    if (
+      sectionName ===
+      'marketAgents'
+    ) {
+      loadMarketAgents();
+    }
+
+    if (
+      sectionName ===
+      'markets'
+    ) {
+      loadMarkets();
+    }
+
+    if (
+      sectionName ===
       'orders'
     ) {
       loadOrders();
@@ -573,16 +643,33 @@
     ) {
       loadPayments();
     }
+
+    if (
+      window.innerWidth <
+      900
+    ) {
+
+      elements.sidebar
+        ?.classList.remove(
+          'open'
+        );
+    }
   }
 
+  /* =========================================================
+     STATISTICS
+  ========================================================= */
+
   async function loadStatistics() {
+
     const totalElement =
       document.getElementById(
         'totalUsers'
       );
 
     try {
-      const payload =
+
+      const data =
         unwrap(
           await Api.get(
             '/admin/users/statistics'
@@ -591,26 +678,36 @@
 
       const total =
         Number(
-          payload?.totalUsers ??
-          payload?.total ??
-          payload?.users ??
+          data?.totalUsers ??
+          data?.total ??
+          data?.users ??
           0
         );
 
-      if (totalElement) {
+      if (
+        totalElement
+      ) {
+
         totalElement.textContent =
           total.toLocaleString();
       }
 
       return total;
-    } catch (error) {
-      if (totalElement) {
+
+    } catch (
+      error
+    ) {
+
+      if (
+        totalElement
+      ) {
+
         totalElement.textContent =
           '0';
       }
 
       console.warn(
-        'Unable to load user statistics:',
+        'Unable to load statistics',
         error
       );
 
@@ -618,7 +715,12 @@
     }
   }
 
+  /* =========================================================
+     APPLICATIONS
+  ========================================================= */
+
   async function loadApplications() {
+
     const table =
       document.getElementById(
         'applicationsTable'
@@ -629,17 +731,22 @@
         'overviewApplications'
       );
 
-    if (table) {
+    if (
+      table
+    ) {
       table.innerHTML =
         loadingState();
     }
 
-    if (overview) {
+    if (
+      overview
+    ) {
       overview.innerHTML =
         loadingState();
     }
 
     try {
+
       const applications =
         arrayFrom(
           await Api.get(
@@ -650,7 +757,7 @@
       const count =
         applications.length;
 
-      const pendingElement =
+      const pending =
         document.getElementById(
           'pendingApplications'
         );
@@ -660,30 +767,42 @@
           'applicationBadge'
         );
 
-      if (pendingElement) {
-        pendingElement.textContent =
-          count.toLocaleString();
+      if (
+        pending
+      ) {
+        pending.textContent =
+          count;
       }
 
-      if (badgeElement) {
+      if (
+        badgeElement
+      ) {
         badgeElement.textContent =
           count;
       }
 
-      if (overview) {
+      if (
+        overview
+      ) {
+
         overview.innerHTML =
-          count
+          applications.length
+
             ? applications
-                .slice(0, 4)
+                .slice(
+                  0,
+                  4
+                )
                 .map(
                   application => `
                     <div class="list-item">
+
                       <div>
+
                         <h3>
                           ${escapeHtml(
                             application.fullName ||
                             application.businessName ||
-                            application.ownerName ||
                             'Provider'
                           )}
                         </h3>
@@ -691,15 +810,14 @@
                         <p>
                           ${escapeHtml(
                             application.role ||
-                            application.providerType ||
                             'PROVIDER'
                           )}
                         </p>
+
                       </div>
 
                       <button
                         class="secondary-button small"
-                        type="button"
                         data-view-application="${
                           application.userId ||
                           application.id
@@ -707,20 +825,27 @@
                       >
                         Review
                       </button>
+
                     </div>
                   `
                 )
                 .join('')
+
             : emptyState(
                 'No pending applications.'
               );
       }
 
-      if (!table) {
+      if (
+        !table
+      ) {
         return applications;
       }
 
-      if (!count) {
+      if (
+        !applications.length
+      ) {
+
         table.innerHTML =
           emptyState(
             'No pending applications.'
@@ -731,6 +856,7 @@
 
       table.innerHTML = `
         <table class="admin-table">
+
           <thead>
             <tr>
               <th>Applicant</th>
@@ -743,10 +869,12 @@
           </thead>
 
           <tbody>
+
             ${applications
               .map(
                 application => `
                   <tr>
+
                     <td>
                       ${escapeHtml(
                         application.fullName ||
@@ -758,7 +886,6 @@
                     <td>
                       ${escapeHtml(
                         application.role ||
-                        application.providerType ||
                         'PROVIDER'
                       )}
                     </td>
@@ -779,15 +906,16 @@
 
                     <td>
                       ${badge(
+                        application.accountStatus ||
                         application.status ||
                         'PENDING_APPROVAL'
                       )}
                     </td>
 
                     <td>
+
                       <button
                         class="secondary-button small"
-                        type="button"
                         data-view-application="${
                           application.userId ||
                           application.id
@@ -795,39 +923,41 @@
                       >
                         Review
                       </button>
+
                     </td>
+
                   </tr>
                 `
               )
               .join('')}
+
           </tbody>
+
         </table>
       `;
 
       return applications;
-    } catch (error) {
-      if (table) {
+
+    } catch (
+      error
+    ) {
+
+      if (
+        table
+      ) {
         table.innerHTML =
           emptyState(
             error.message
           );
       }
 
-      if (overview) {
+      if (
+        overview
+      ) {
         overview.innerHTML =
           emptyState(
             'Unable to load applications.'
           );
-      }
-
-      const pendingElement =
-        document.getElementById(
-          'pendingApplications'
-        );
-
-      if (pendingElement) {
-        pendingElement.textContent =
-          '0';
       }
 
       showError(error);
@@ -836,42 +966,156 @@
     }
   }
 
-  async function openApplication(userId) {
+  async function openApplication(
+    userId
+  ) {
+
     try {
-      openModal(`<h2 id="modalTitle">Loading application…</h2>${loadingState()}`);
-      const a = unwrap(await Api.get(`/admin/applications/${userId}`));
-      const mediaUrl=value=>{if(!value)return null;if(/^https?:\/\//i.test(value))return value;if(value.startsWith('/uploads/'))return `https://illustrious-nurturing-production-8169.up.railway.app${value}`;return value};
-      const picture=(label,value)=>value?`<div class="application-media"><span>${label}</span><a href="${escapeHtml(mediaUrl(value))}" target="_blank" rel="noopener"><img src="${escapeHtml(mediaUrl(value))}" alt="${label}"></a></div>`:'';
-      const gallery=Array.isArray(a.kitchenImages)?a.kitchenImages:[];
-      const details=[['Full name',a.fullName],['Provider type',a.role],['Business/Kitchen name',a.businessName],['Cuisine',a.cuisine],['Email',a.email],['Phone',a.phoneNumber],['Account status',a.accountStatus],['State',a.state],['LGA',a.lga],['Area',a.area],['Full address',a.addressLine],['Latitude',a.latitude],['Longitude',a.longitude],['Facial verification',a.facialVerificationStatus],['Bank',a.bankName],['Account name',a.accountName],['Account number',a.accountNumber],['Registered',formatDate(a.registeredAt)],['Profile submitted',formatDate(a.profileSubmittedAt)],['Profile complete',a.profileCompleted?'Yes':'No']];
+
+      openModal(
+        `
+          <h2 id="modalTitle">
+            Loading application…
+          </h2>
+
+          ${loadingState()}
+        `
+      );
+
+      const application =
+        unwrap(
+          await Api.get(
+            `/admin/applications/${userId}`
+          )
+        );
+
       openModal(`
-        <h2 id="modalTitle">Provider application</h2>
-        <div class="modal-detail-grid">${details.map(([k,v])=>`<div class="modal-detail"><span>${escapeHtml(k)}</span><strong>${escapeHtml(v??'—')}</strong></div>`).join('')}</div>
-        <div class="application-bio"><span>About the business</span><p>${escapeHtml(a.bio||'No bio provided.')}</p></div>
-        <div class="application-media-grid">${picture('Profile picture',a.profileImageUrl)}${picture('Cover picture',a.coverImageUrl)}</div>
-        ${gallery.length?`<h3 class="application-heading">Kitchen pictures</h3><div class="application-gallery">${gallery.map(img=>`<a href="${escapeHtml(mediaUrl(img.imageUrl))}" target="_blank" rel="noopener"><img src="${escapeHtml(mediaUrl(img.imageUrl))}" alt="${escapeHtml(img.caption||'Kitchen picture')}"><small>${escapeHtml(img.caption||'Kitchen picture')}</small></a>`).join('')}</div>`:''}
-        <h3 class="application-heading">Downloads</h3>
-        <div class="table-actions">
-          <button class="secondary-button" data-download-application="${userId}"><i class="bi bi-download"></i> Download full application</button>
-          ${a.idDocumentUrl?`<button class="secondary-button" data-download-id="${userId}"><i class="bi bi-file-earmark-arrow-down"></i> Download ID</button>`:''}
+        <h2 id="modalTitle">
+          Provider Application
+        </h2>
+
+        <div class="modal-detail-grid">
+
+          <div class="modal-detail">
+            <span>Full name</span>
+            <strong>
+              ${escapeHtml(
+                application.fullName ||
+                '—'
+              )}
+            </strong>
+          </div>
+
+          <div class="modal-detail">
+            <span>Role</span>
+            <strong>
+              ${escapeHtml(
+                application.role ||
+                '—'
+              )}
+            </strong>
+          </div>
+
+          <div class="modal-detail">
+            <span>Business</span>
+            <strong>
+              ${escapeHtml(
+                application.businessName ||
+                '—'
+              )}
+            </strong>
+          </div>
+
+          <div class="modal-detail">
+            <span>Email</span>
+            <strong>
+              ${escapeHtml(
+                application.email ||
+                '—'
+              )}
+            </strong>
+          </div>
+
+          <div class="modal-detail">
+            <span>Phone</span>
+            <strong>
+              ${escapeHtml(
+                application.phoneNumber ||
+                '—'
+              )}
+            </strong>
+          </div>
+
+          <div class="modal-detail">
+            <span>Status</span>
+            <strong>
+              ${escapeHtml(
+                application.accountStatus ||
+                '—'
+              )}
+            </strong>
+          </div>
+
         </div>
-        <div class="modal-actions"><button class="danger-button" data-reject-application="${userId}">Reject</button><button class="success-button" data-approve-application="${userId}">Approve</button></div>`);
-    } catch (error) { closeModal(); showError(error); }
+
+        <div class="application-bio">
+
+          <span>
+            About business
+          </span>
+
+          <p>
+            ${escapeHtml(
+              application.bio ||
+              'No bio provided.'
+            )}
+          </p>
+
+        </div>
+
+        <div class="modal-actions">
+
+          <button
+            class="danger-button"
+            data-reject-application="${userId}"
+          >
+            Reject
+          </button>
+
+          <button
+            class="success-button"
+            data-approve-application="${userId}"
+          >
+            Approve
+          </button>
+
+        </div>
+      `);
+
+    } catch (
+      error
+    ) {
+
+      closeModal();
+
+      showError(error);
+    }
   }
 
   async function approveApplication(
     userId
   ) {
-    const confirmed =
-      window.confirm(
-        'Approve this provider application?'
-      );
 
-    if (!confirmed) {
+    if (
+      !window.confirm(
+        'Approve this application?'
+      )
+    ) {
       return;
     }
 
     try {
+
       await Api.patch(
         `/admin/applications/${userId}/approve`,
         {}
@@ -880,12 +1124,15 @@
       closeModal();
 
       showAlert(
-        'Application approved successfully.'
+        'Application approved.'
       );
 
       await loadApplications();
-      await loadStatistics();
-    } catch (error) {
+
+    } catch (
+      error
+    ) {
+
       showError(error);
     }
   }
@@ -893,25 +1140,25 @@
   function showRejectApplication(
     userId
   ) {
+
     openModal(`
       <h2 id="modalTitle">
-        Reject application
+        Reject Application
       </h2>
 
-      <p>
-        Enter the reason for rejecting this provider.
-      </p>
+      <label>
+        Rejection reason
+      </label>
 
       <textarea
         id="applicationRejectReason"
-        placeholder="Rejection reason"
+        placeholder="Enter reason"
       ></textarea>
 
       <div class="modal-actions">
 
         <button
           class="secondary-button"
-          type="button"
           data-close-modal
         >
           Cancel
@@ -919,10 +1166,9 @@
 
         <button
           class="danger-button"
-          type="button"
           data-confirm-reject-application="${userId}"
         >
-          Reject application
+          Reject
         </button>
 
       </div>
@@ -932,6 +1178,7 @@
   async function rejectApplication(
     userId
   ) {
+
     const reason =
       document
         .getElementById(
@@ -940,7 +1187,10 @@
         ?.value
         .trim();
 
-    if (!reason) {
+    if (
+      !reason
+    ) {
+
       showAlert(
         'Enter a rejection reason.',
         'error'
@@ -950,9 +1200,12 @@
     }
 
     try {
+
       await Api.patch(
         `/admin/applications/${userId}/reject`,
-        { reason }
+        {
+          reason
+        }
       );
 
       closeModal();
@@ -962,19 +1215,29 @@
       );
 
       await loadApplications();
-      await loadStatistics();
-    } catch (error) {
+
+    } catch (
+      error
+    ) {
+
       showError(error);
     }
   }
 
+  /* =========================================================
+     USERS
+  ========================================================= */
+
   async function loadUsers() {
+
     const table =
       document.getElementById(
         'usersTable'
       );
 
-    if (!table) {
+    if (
+      !table
+    ) {
       return [];
     }
 
@@ -987,40 +1250,49 @@
           'userSearch'
         )
         ?.value
-        .trim() || '';
+        .trim() ||
+      '';
 
     const role =
       document
         .getElementById(
           'userRole'
         )
-        ?.value || '';
+        ?.value ||
+      '';
 
     const status =
       document
         .getElementById(
           'userStatus'
         )
-        ?.value || '';
+        ?.value ||
+      '';
 
     const params =
       new URLSearchParams();
 
-    if (search) {
+    if (
+      search
+    ) {
       params.set(
         'search',
         search
       );
     }
 
-    if (role) {
+    if (
+      role
+    ) {
       params.set(
         'role',
         role
       );
     }
 
-    if (status) {
+    if (
+      status
+    ) {
       params.set(
         'status',
         status
@@ -1028,9 +1300,10 @@
     }
 
     try {
+
       const suffix =
         params.toString()
-          ? `?${params.toString()}`
+          ? `?${params}`
           : '';
 
       const users =
@@ -1040,7 +1313,10 @@
           )
         );
 
-      if (!users.length) {
+      if (
+        !users.length
+      ) {
+
         table.innerHTML =
           emptyState(
             'No users found.'
@@ -1051,6 +1327,7 @@
 
       table.innerHTML = `
         <table class="admin-table">
+
           <thead>
             <tr>
               <th>User</th>
@@ -1063,10 +1340,12 @@
           </thead>
 
           <tbody>
+
             ${users
               .map(
                 user => `
                   <tr>
+
                     <td>
                       ${escapeHtml(
                         user.fullName ||
@@ -1104,9 +1383,9 @@
                     </td>
 
                     <td>
+
                       <button
                         class="secondary-button small"
-                        type="button"
                         data-manage-user="${
                           user.id ||
                           user.userId
@@ -1123,17 +1402,25 @@
                       >
                         Manage
                       </button>
+
                     </td>
+
                   </tr>
                 `
               )
               .join('')}
+
           </tbody>
+
         </table>
       `;
 
       return users;
-    } catch (error) {
+
+    } catch (
+      error
+    ) {
+
       table.innerHTML =
         emptyState(
           error.message
@@ -1148,92 +1435,62 @@
   function openUserManager(
     button
   ) {
+
     const userId =
-      button.dataset.manageUser;
+      button.dataset
+        .manageUser;
 
     const userName =
-      button.dataset.userName ||
+      button.dataset
+        .userName ||
       'User';
 
     const currentStatus =
-      button.dataset.userStatus ||
+      button.dataset
+        .userStatus ||
       '';
 
     openModal(`
       <h2 id="modalTitle">
-        Manage ${escapeHtml(userName)}
+        Manage ${escapeHtml(
+          userName
+        )}
       </h2>
 
-      <label for="newUserStatus">
+      <label>
         Account status
       </label>
 
       <select id="newUserStatus">
 
-        <option
-          value="ACTIVE"
-          ${
-            currentStatus ===
-            'ACTIVE'
-              ? 'selected'
-              : ''
-          }
-        >
-          ACTIVE
-        </option>
-
-        <option
-          value="SUSPENDED"
-          ${
-            currentStatus ===
-            'SUSPENDED'
-              ? 'selected'
-              : ''
-          }
-        >
-          SUSPENDED
-        </option>
-
-        <option
-          value="DISABLED"
-          ${
-            currentStatus ===
-            'DISABLED'
-              ? 'selected'
-              : ''
-          }
-        >
-          DISABLED
-        </option>
-
-        <option
-          value="REJECTED"
-          ${
-            currentStatus ===
-            'REJECTED'
-              ? 'selected'
-              : ''
-          }
-        >
-          REJECTED
-        </option>
-
-        <option
-          value="PENDING_APPROVAL"
-          ${
-            currentStatus ===
-            'PENDING_APPROVAL'
-              ? 'selected'
-              : ''
-          }
-        >
-          PENDING_APPROVAL
-        </option>
+        ${[
+          'ACTIVE',
+          'SUSPENDED',
+          'DISABLED',
+          'REJECTED',
+          'PENDING_APPROVAL',
+          'PENDING_VERIFICATION'
+        ]
+          .map(
+            status => `
+              <option
+                value="${status}"
+                ${
+                  currentStatus ===
+                  status
+                    ? 'selected'
+                    : ''
+                }
+              >
+                ${status}
+              </option>
+            `
+          )
+          .join('')}
 
       </select>
 
       <label
-        for="userStatusReason"
         style="display:block;margin-top:14px"
       >
         Reason
@@ -1248,7 +1505,6 @@
 
         <button
           class="secondary-button"
-          type="button"
           data-close-modal
         >
           Cancel
@@ -1256,10 +1512,9 @@
 
         <button
           class="primary-button"
-          type="button"
           data-save-user-status="${userId}"
         >
-          Save status
+          Save
         </button>
 
       </div>
@@ -1269,6 +1524,7 @@
   async function saveUserStatus(
     userId
   ) {
+
     const status =
       document
         .getElementById(
@@ -1286,6 +1542,7 @@
       null;
 
     try {
+
       await Api.patch(
         `/admin/users/${userId}/status`,
         {
@@ -1301,13 +1558,865 @@
       );
 
       await loadUsers();
-      await loadStatistics();
-    } catch (error) {
+
+    } catch (
+      error
+    ) {
+
       showError(error);
     }
   }
 
+  /* =========================================================
+     MARKETERS
+  ========================================================= */
+
+  async function loadMarketers() {
+
+    const table =
+      document.getElementById(
+        'marketersTable'
+      );
+
+    if (
+      !table
+    ) {
+      return [];
+    }
+
+    table.innerHTML =
+      loadingState();
+
+    try {
+
+      const marketers =
+        arrayFrom(
+          await Api.get(
+            '/admin/marketers'
+          )
+        );
+
+      if (
+        !marketers.length
+      ) {
+
+        table.innerHTML =
+          emptyState(
+            'No marketers have been created yet.'
+          );
+
+        return [];
+      }
+
+      table.innerHTML = `
+        <table class="admin-table">
+
+          <thead>
+            <tr>
+              <th>Marketer</th>
+              <th>Contact</th>
+              <th>Referral code</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Activation</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            ${marketers
+              .map(
+                marketer => `
+                  <tr>
+
+                    <td>
+                      <strong>
+                        ${escapeHtml(
+                          marketer.fullName ||
+                          'Marketer'
+                        )}
+                      </strong>
+                    </td>
+
+                    <td>
+
+                      ${escapeHtml(
+                        marketer.email ||
+                        '—'
+                      )}
+
+                      <br>
+
+                      <small>
+                        ${escapeHtml(
+                          marketer.phoneNumber ||
+                          ''
+                        )}
+                      </small>
+
+                    </td>
+
+                    <td>
+                      <strong>
+                        ${escapeHtml(
+                          marketer.referralCode ||
+                          '—'
+                        )}
+                      </strong>
+                    </td>
+
+                    <td>
+                      ${badge(
+                        marketer.status ||
+                        marketer.accountStatus ||
+                        'PENDING_VERIFICATION'
+                      )}
+                    </td>
+
+                    <td>
+                      ${formatDate(
+                        marketer.createdAt ||
+                        marketer.registeredAt
+                      )}
+                    </td>
+
+                    <td>
+                      ${marketer.email || marketer.phoneNumber
+                        ? `<a href="https://oyukimarketplace.com/marketer-activate.html?email=${encodeURIComponent(marketer.email || '')}&phone=${encodeURIComponent(marketer.phoneNumber || '')}" target="_blank" rel="noopener">Activation page</a>`
+                        : '—'}
+                    </td>
+
+                  </tr>
+                `
+              )
+              .join('')}
+
+          </tbody>
+
+        </table>
+      `;
+
+      return marketers;
+
+    } catch (
+      error
+    ) {
+
+      table.innerHTML =
+        emptyState(
+          error.message ||
+          'Unable to load marketers.'
+        );
+
+      showError(error);
+
+      return [];
+    }
+  }
+
+  function openCreateMarketer() {
+
+    openModal(`
+      <h2 id="modalTitle">
+        Create Marketer
+      </h2>
+
+      <p>
+        Marketer accounts are created by Oyuki Admin.
+        An activation OTP will be sent automatically to every contact provided. At least one email or phone number is required.
+      </p>
+
+      <form id="createMarketerForm">
+
+        <label>
+          Full name
+        </label>
+
+        <input
+          name="fullName"
+          type="text"
+          required
+          placeholder="Marketer full name"
+        >
+
+        <label>
+          Email address (optional if phone is provided)
+        </label>
+
+        <input
+          name="email"
+          type="email"
+          placeholder="name@example.com"
+        >
+
+        <label>
+          Phone number (optional if email is provided)
+        </label>
+
+        <input
+          name="phoneNumber"
+          type="tel"
+          placeholder="+234..."
+        >
+
+        <div class="modal-actions">
+
+          <button
+            class="secondary-button"
+            type="button"
+            data-close-modal
+          >
+            Cancel
+          </button>
+
+          <button
+            class="primary-button"
+            type="submit"
+          >
+            Create Marketer
+          </button>
+
+        </div>
+
+      </form>
+    `);
+
+    document
+      .getElementById(
+        'createMarketerForm'
+      )
+      ?.addEventListener(
+        'submit',
+        createMarketer
+      );
+  }
+
+  async function createMarketer(
+    event
+  ) {
+
+    event.preventDefault();
+
+    const form =
+      event.currentTarget;
+
+    const button =
+      form.querySelector(
+        'button[type="submit"]'
+      );
+
+    const payload =
+      Object.fromEntries(
+        new FormData(form)
+          .entries()
+      );
+
+    try {
+
+      if (
+        button
+      ) {
+
+        button.disabled =
+          true;
+
+        button.textContent =
+          'Creating…';
+      }
+
+      await Api.post(
+        '/admin/marketers',
+        payload
+      );
+
+      closeModal();
+
+      showAlert(
+        'Marketer created. OTP has been sent for account activation.'
+      );
+
+      await loadMarketers();
+
+    } catch (
+      error
+    ) {
+
+      showError(error);
+
+      if (
+        button
+      ) {
+
+        button.disabled =
+          false;
+
+        button.textContent =
+          'Create Marketer';
+      }
+    }
+  }
+
+  /* =========================================================
+     MARKETS
+  ========================================================= */
+
+  async function loadMarkets() {
+
+    const table =
+      document.getElementById(
+        'marketsTable'
+      );
+
+    if (
+      !table
+    ) {
+      return [];
+    }
+
+    table.innerHTML =
+      loadingState();
+
+    try {
+
+      const markets =
+        arrayFrom(
+          await Api.get(
+            '/admin/markets'
+          )
+        );
+
+      if (
+        !markets.length
+      ) {
+
+        table.innerHTML =
+          emptyState(
+            'No markets have been added yet.'
+          );
+
+        return [];
+      }
+
+      table.innerHTML = `
+        <table class="admin-table">
+
+          <thead>
+            <tr>
+              <th>Market</th>
+              <th>State</th>
+              <th>LGA</th>
+              <th>Address</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            ${markets
+              .map(
+                market => `
+                  <tr>
+
+                    <td>
+                      <strong>
+                        ${escapeHtml(
+                          market.name ||
+                          market.marketName ||
+                          'Market'
+                        )}
+                      </strong>
+                    </td>
+
+                    <td>
+                      ${escapeHtml(
+                        market.stateName ||
+                        market.state?.name ||
+                        market.state ||
+                        '—'
+                      )}
+                    </td>
+
+                    <td>
+                      ${escapeHtml(
+                        market.lgaName ||
+                        market.lga?.name ||
+                        market.lga ||
+                        '—'
+                      )}
+                    </td>
+
+                    <td>
+                      ${escapeHtml(
+                        market.address ||
+                        market.location ||
+                        '—'
+                      )}
+                    </td>
+
+                    <td>
+                      ${badge(
+                        market.status ||
+                        (
+                          market.active ===
+                          false
+                            ? 'INACTIVE'
+                            : 'ACTIVE'
+                        )
+                      )}
+                    </td>
+
+                  </tr>
+                `
+              )
+              .join('')}
+
+          </tbody>
+
+        </table>
+      `;
+
+      return markets;
+
+    } catch (
+      error
+    ) {
+
+      table.innerHTML =
+        emptyState(
+          error.message ||
+          'Unable to load markets.'
+        );
+
+      showError(error);
+
+      return [];
+    }
+  }
+
+  function openCreateMarket() {
+
+    openModal(`
+      <h2 id="modalTitle">
+        Add Market
+      </h2>
+
+      <p>
+        Add a local market to Oyuki Market Square.
+      </p>
+
+      <form id="createMarketForm">
+
+        <label>
+          Market name
+        </label>
+
+        <input
+          name="name"
+          required
+          placeholder="Mile 12 Market"
+        >
+
+        <label>
+          State
+        </label>
+
+        <input
+          name="state"
+          required
+          value="Lagos"
+        >
+
+        <label>
+          LGA
+        </label>
+
+        <input
+          name="lga"
+          required
+          placeholder="Kosofe"
+        >
+
+        <label>
+          Address
+        </label>
+
+        <input
+          name="address"
+          placeholder="Market address"
+        >
+
+        <label>
+          Categories
+        </label>
+
+        <input
+          name="categories"
+          placeholder="Vegetables, Fish, Fruits..."
+        >
+
+        <div class="modal-actions">
+
+          <button
+            class="secondary-button"
+            type="button"
+            data-close-modal
+          >
+            Cancel
+          </button>
+
+          <button
+            class="primary-button"
+            type="submit"
+          >
+            Add Market
+          </button>
+
+        </div>
+
+      </form>
+    `);
+
+    document
+      .getElementById(
+        'createMarketForm'
+      )
+      ?.addEventListener(
+        'submit',
+        createMarket
+      );
+  }
+
+  async function createMarket(
+    event
+  ) {
+
+    event.preventDefault();
+
+    const form =
+      event.currentTarget;
+
+    const button =
+      form.querySelector(
+        'button[type="submit"]'
+      );
+
+    const payload =
+      Object.fromEntries(
+        new FormData(form)
+          .entries()
+      );
+
+    if (
+      payload.categories
+    ) {
+
+      payload.categories =
+        payload.categories
+          .split(',')
+          .map(
+            item =>
+              item.trim()
+          )
+          .filter(Boolean);
+    }
+
+    try {
+
+      if (
+        button
+      ) {
+
+        button.disabled =
+          true;
+
+        button.textContent =
+          'Adding…';
+      }
+
+      await Api.post(
+        '/admin/markets',
+        payload
+      );
+
+      closeModal();
+
+      showAlert(
+        'Market added successfully.'
+      );
+
+      await loadMarkets();
+
+    } catch (
+      error
+    ) {
+
+      showError(error);
+
+      if (
+        button
+      ) {
+
+        button.disabled =
+          false;
+
+        button.textContent =
+          'Add Market';
+      }
+    }
+  }
+
+  /* =========================================================
+     MARKET AGENTS
+  ========================================================= */
+
+  async function loadMarketAgents() {
+
+    const table =
+      document.getElementById(
+        'marketAgentsTable'
+      );
+
+    if (
+      !table
+    ) {
+      return [];
+    }
+
+    table.innerHTML =
+      loadingState();
+
+    try {
+
+      const agents =
+        arrayFrom(
+          await Api.get(
+            '/admin/market-agents'
+          )
+        );
+
+      if (
+        !agents.length
+      ) {
+
+        table.innerHTML =
+          emptyState(
+            'No market agents have been created yet.'
+          );
+
+        return [];
+      }
+
+      table.innerHTML = `
+        <table class="admin-table">
+
+          <thead>
+            <tr>
+              <th>Agent</th>
+              <th>Contact</th>
+              <th>LGA</th>
+              <th>Market</th>
+              <th>Status</th>
+              <th>Activation</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            ${agents
+              .map(
+                agent => `
+                  <tr>
+
+                    <td>
+                      <strong>
+                        ${escapeHtml(
+                          agent.fullName ||
+                          'Market Agent'
+                        )}
+                      </strong>
+                    </td>
+
+                    <td>
+
+                      ${escapeHtml(
+                        agent.email ||
+                        '—'
+                      )}
+
+                      <br>
+
+                      <small>
+                        ${escapeHtml(
+                          agent.phoneNumber ||
+                          ''
+                        )}
+                      </small>
+
+                    </td>
+
+                    <td>
+                      ${escapeHtml(
+                        agent.lgaName ||
+                        agent.lga?.name ||
+                        agent.lga ||
+                        '—'
+                      )}
+                    </td>
+
+                    <td>
+                      ${escapeHtml(
+                        agent.marketName ||
+                        agent.market?.name ||
+                        '—'
+                      )}
+                    </td>
+
+                    <td>
+                      ${badge(
+                        agent.status ||
+                        agent.accountStatus ||
+                        'PENDING_VERIFICATION'
+                      )}
+                    </td>
+
+                    <td>
+                      ${agent.email || agent.phoneNumber
+                        ? `<a href="https://oyukimarketplace.com/market-agent-activate.html?email=${encodeURIComponent(agent.email || '')}&phone=${encodeURIComponent(agent.phoneNumber || '')}" target="_blank" rel="noopener">Activation page</a>`
+                        : '—'}
+                    </td>
+
+                    <td>
+                      ${formatDate(
+                        agent.createdAt
+                      )}
+                    </td>
+
+                  </tr>
+                `
+              )
+              .join('')}
+
+          </tbody>
+
+        </table>
+      `;
+
+      return agents;
+
+    } catch (
+      error
+    ) {
+
+      table.innerHTML =
+        emptyState(
+          error.message ||
+          'Unable to load market agents.'
+        );
+
+      showError(error);
+
+      return [];
+    }
+  }
+
+  async function openCreateMarketAgent() {
+    let states = [];
+    try { states = arrayFrom(await Api.get('/market-directory/states')); }
+    catch (error) { console.warn('Could not load states', error); }
+
+    openModal(`
+      <h2 id="modalTitle">Create Market Agent</h2>
+      <p>Create an Oyuki market agent and manually assign the agent to a State, LGA and Market. At least one email or phone number is required for activation.</p>
+      <form id="createMarketAgentForm">
+        <label>Full name</label>
+        <input name="fullName" required placeholder="Agent full name">
+        <label>Email address</label>
+        <input name="email" type="email" placeholder="agent@example.com">
+        <label>Phone number</label>
+        <input name="phoneNumber" type="tel" placeholder="+234...">
+        <label>State</label>
+        <select name="stateId" id="agentStateId" required>
+          <option value="">Select state</option>
+          ${states.map(state => `<option value="${escapeHtml(state.id)}">${escapeHtml(state.name)}</option>`).join('')}
+        </select>
+        <label>LGA</label>
+        <select name="lgaId" id="agentLgaId" required disabled>
+          <option value="">Select state first</option>
+        </select>
+        <label>Market</label>
+        <select name="marketId" id="agentMarketId" required disabled>
+          <option value="">Select LGA first</option>
+        </select>
+        <label>Emergency contact name</label>
+        <input name="emergencyContactName" placeholder="Optional">
+        <label>Emergency contact phone</label>
+        <input name="emergencyContactPhone" type="tel" placeholder="Optional">
+        <div class="modal-actions">
+          <button class="secondary-button" type="button" data-close-modal>Cancel</button>
+          <button class="primary-button" type="submit">Create Market Agent</button>
+        </div>
+      </form>
+    `);
+
+    const stateSelect = document.getElementById('agentStateId');
+    const lgaSelect = document.getElementById('agentLgaId');
+    const marketSelect = document.getElementById('agentMarketId');
+
+    stateSelect?.addEventListener('change', async () => {
+      const stateId = stateSelect.value;
+      lgaSelect.innerHTML = '<option value="">Loading LGAs…</option>';
+      lgaSelect.disabled = true;
+      marketSelect.innerHTML = '<option value="">Select LGA first</option>';
+      marketSelect.disabled = true;
+      if (!stateId) { lgaSelect.innerHTML = '<option value="">Select state first</option>'; return; }
+      try {
+        const lgas = arrayFrom(await Api.get(`/market-directory/lgas?stateId=${encodeURIComponent(stateId)}`));
+        lgaSelect.innerHTML = '<option value="">Select LGA</option>' + lgas.map(lga => `<option value="${escapeHtml(lga.id)}">${escapeHtml(lga.name)}</option>`).join('');
+        lgaSelect.disabled = false;
+      } catch (error) { lgaSelect.innerHTML = '<option value="">Unable to load LGAs</option>'; showError(error); }
+    });
+
+    lgaSelect?.addEventListener('change', async () => {
+      const lgaId = lgaSelect.value;
+      marketSelect.innerHTML = '<option value="">Loading markets…</option>';
+      marketSelect.disabled = true;
+      if (!lgaId) { marketSelect.innerHTML = '<option value="">Select LGA first</option>'; return; }
+      try {
+        const markets = arrayFrom(await Api.get(`/market-directory/markets?lgaId=${encodeURIComponent(lgaId)}`));
+        marketSelect.innerHTML = '<option value="">Select market</option>' + markets.map(market => `<option value="${escapeHtml(market.id)}">${escapeHtml(market.name)}</option>`).join('');
+        marketSelect.disabled = false;
+      } catch (error) { marketSelect.innerHTML = '<option value="">Unable to load markets</option>'; showError(error); }
+    });
+    document.getElementById('createMarketAgentForm')?.addEventListener('submit', createMarketAgent);
+  }
+
+  async function createMarketAgent(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector('button[type="submit"]');
+    const payload = Object.fromEntries(new FormData(form).entries());
+    payload.stateId = Number(payload.stateId);
+    payload.lgaId = Number(payload.lgaId);
+    payload.marketId = Number(payload.marketId);
+    try {
+      if (button) { button.disabled = true; button.textContent = 'Creating…'; }
+      await Api.post('/admin/market-agents', payload);
+      closeModal();
+      showAlert('Market Agent created. Activation OTP has been sent.');
+      await loadMarketAgents();
+    } catch (error) {
+      showError(error);
+      if (button) { button.disabled = false; button.textContent = 'Create Market Agent'; }
+    }
+  }
+
+  /* =========================================================
+     ORDERS
+  ========================================================= */
+
   async function loadOrders() {
+
     const table =
       document.getElementById(
         'ordersTable'
@@ -1318,17 +2427,22 @@
         'overviewOrders'
       );
 
-    if (table) {
+    if (
+      table
+    ) {
       table.innerHTML =
         loadingState();
     }
 
-    if (overview) {
+    if (
+      overview
+    ) {
       overview.innerHTML =
         loadingState();
     }
 
     try {
+
       const orders =
         arrayFrom(
           await Api.get(
@@ -1336,26 +2450,36 @@
           )
         );
 
-      const totalElement =
+      const total =
         document.getElementById(
           'totalOrders'
         );
 
-      if (totalElement) {
-        totalElement.textContent =
-          orders.length
-            .toLocaleString();
+      if (
+        total
+      ) {
+        total.textContent =
+          orders.length;
       }
 
-      if (overview) {
+      if (
+        overview
+      ) {
+
         overview.innerHTML =
           orders.length
+
             ? orders
-                .slice(0, 5)
+                .slice(
+                  0,
+                  5
+                )
                 .map(
                   order => `
                     <div class="list-item">
+
                       <div>
+
                         <h3>
                           Order #${escapeHtml(
                             order.orderNumber ||
@@ -1364,50 +2488,50 @@
                         </h3>
 
                         <p>
-                          ${escapeHtml(
-                            order.customerName ||
-                            order.customer
-                              ?.fullName ||
-                            'Customer'
-                          )}
-
-                          ·
-
                           ${formatMoney(
                             order.totalAmount ||
                             order.total
                           )}
                         </p>
+
                       </div>
 
                       ${badge(
                         order.status ||
                         'PENDING'
                       )}
+
                     </div>
                   `
                 )
                 .join('')
+
             : emptyState(
                 'No orders found.'
               );
       }
 
-      if (!table) {
+      if (
+        !table
+      ) {
         return orders;
       }
 
-      if (!orders.length) {
+      if (
+        !orders.length
+      ) {
+
         table.innerHTML =
           emptyState(
             'No orders found.'
           );
 
-        return orders;
+        return [];
       }
 
       table.innerHTML = `
         <table class="admin-table">
+
           <thead>
             <tr>
               <th>Order</th>
@@ -1419,10 +2543,12 @@
           </thead>
 
           <tbody>
+
             ${orders
               .map(
                 order => `
                   <tr>
+
                     <td>
                       #${escapeHtml(
                         order.orderNumber ||
@@ -1433,8 +2559,7 @@
                     <td>
                       ${escapeHtml(
                         order.customerName ||
-                        order.customer
-                          ?.fullName ||
+                        order.customer?.fullName ||
                         'Customer'
                       )}
                     </td>
@@ -1458,38 +2583,31 @@
                         order.createdAt
                       )}
                     </td>
+
                   </tr>
                 `
               )
               .join('')}
+
           </tbody>
+
         </table>
       `;
 
       return orders;
-    } catch (error) {
-      if (table) {
+
+    } catch (
+      error
+    ) {
+
+      if (
+        table
+      ) {
+
         table.innerHTML =
           emptyState(
             error.message
           );
-      }
-
-      if (overview) {
-        overview.innerHTML =
-          emptyState(
-            'Unable to load orders.'
-          );
-      }
-
-      const totalElement =
-        document.getElementById(
-          'totalOrders'
-        );
-
-      if (totalElement) {
-        totalElement.textContent =
-          '0';
       }
 
       showError(error);
@@ -1498,31 +2616,40 @@
     }
   }
 
+  /* =========================================================
+     PAYMENTS
+  ========================================================= */
+
   async function loadPayments() {
+
     const table =
       document.getElementById(
         'paymentsTable'
       );
 
-    if (!table) {
+    if (
+      !table
+    ) {
       return [];
     }
 
     table.innerHTML =
       loadingState();
 
-    const selectedStatus =
+    const status =
       document
         .getElementById(
           'paymentStatus'
         )
-        ?.value || '';
+        ?.value ||
+      '';
 
     try {
+
       const suffix =
-        selectedStatus
+        status
           ? `?status=${encodeURIComponent(
-              selectedStatus
+              status
             )}`
           : '';
 
@@ -1537,7 +2664,8 @@
         payments.filter(
           payment =>
             String(
-              payment.status || ''
+              payment.status ||
+              ''
             ).toUpperCase() ===
             'PENDING'
         ).length;
@@ -1547,22 +2675,29 @@
           'pendingPayments'
         );
 
-      if (pendingElement) {
+      if (
+        pendingElement
+      ) {
+
         pendingElement.textContent =
-          pending.toLocaleString();
+          pending;
       }
 
-      if (!payments.length) {
+      if (
+        !payments.length
+      ) {
+
         table.innerHTML =
           emptyState(
             'No payment proofs found.'
           );
 
-        return payments;
+        return [];
       }
 
       table.innerHTML = `
         <table class="admin-table">
+
           <thead>
             <tr>
               <th>Payment</th>
@@ -1575,10 +2710,12 @@
           </thead>
 
           <tbody>
+
             ${payments
               .map(
                 payment => `
                   <tr>
+
                     <td>
                       #${escapeHtml(
                         payment.id
@@ -1596,8 +2733,7 @@
                     <td>
                       ${escapeHtml(
                         payment.customerName ||
-                        payment.user
-                          ?.fullName ||
+                        payment.user?.fullName ||
                         'Customer'
                       )}
                     </td>
@@ -1616,50 +2752,51 @@
                     </td>
 
                     <td>
+
                       <div class="table-actions">
 
                         <button
                           class="success-button small"
-                          type="button"
-                          data-confirm-payment="${payment.id}"
+                          data-confirm-payment="${
+                            payment.id
+                          }"
                         >
                           Confirm
                         </button>
 
                         <button
                           class="danger-button small"
-                          type="button"
-                          data-reject-payment="${payment.id}"
+                          data-reject-payment="${
+                            payment.id
+                          }"
                         >
                           Reject
                         </button>
 
                       </div>
+
                     </td>
+
                   </tr>
                 `
               )
               .join('')}
+
           </tbody>
+
         </table>
       `;
 
       return payments;
-    } catch (error) {
+
+    } catch (
+      error
+    ) {
+
       table.innerHTML =
         emptyState(
           error.message
         );
-
-      const pendingElement =
-        document.getElementById(
-          'pendingPayments'
-        );
-
-      if (pendingElement) {
-        pendingElement.textContent =
-          '0';
-      }
 
       showError(error);
 
@@ -1668,20 +2805,21 @@
   }
 
   async function confirmPayment(
-    paymentId
+    id
   ) {
-    const confirmed =
-      window.confirm(
-        'Confirm this payment?'
-      );
 
-    if (!confirmed) {
+    if (
+      !window.confirm(
+        'Confirm this payment?'
+      )
+    ) {
       return;
     }
 
     try {
+
       await Api.patch(
-        `/admin/payments/${paymentId}/confirm`,
+        `/admin/payments/${id}/confirm`,
         {
           note:
             'Confirmed by administrator'
@@ -1693,18 +2831,22 @@
       );
 
       await loadPayments();
-      await loadOrders();
-    } catch (error) {
+
+    } catch (
+      error
+    ) {
+
       showError(error);
     }
   }
 
   function showRejectPayment(
-    paymentId
+    id
   ) {
+
     openModal(`
       <h2 id="modalTitle">
-        Reject payment
+        Reject Payment
       </h2>
 
       <textarea
@@ -1716,7 +2858,6 @@
 
         <button
           class="secondary-button"
-          type="button"
           data-close-modal
         >
           Cancel
@@ -1724,10 +2865,9 @@
 
         <button
           class="danger-button"
-          type="button"
-          data-confirm-reject-payment="${paymentId}"
+          data-confirm-reject-payment="${id}"
         >
-          Reject payment
+          Reject
         </button>
 
       </div>
@@ -1735,8 +2875,9 @@
   }
 
   async function rejectPayment(
-    paymentId
+    id
   ) {
+
     const reason =
       document
         .getElementById(
@@ -1745,7 +2886,10 @@
         ?.value
         .trim();
 
-    if (!reason) {
+    if (
+      !reason
+    ) {
+
       showAlert(
         'Enter a rejection reason.',
         'error'
@@ -1755,9 +2899,12 @@
     }
 
     try {
+
       await Api.patch(
-        `/admin/payments/${paymentId}/reject`,
-        { reason }
+        `/admin/payments/${id}/reject`,
+        {
+          reason
+        }
       );
 
       closeModal();
@@ -1767,12 +2914,21 @@
       );
 
       await loadPayments();
-    } catch (error) {
+
+    } catch (
+      error
+    ) {
+
       showError(error);
     }
   }
 
+  /* =========================================================
+     OVERVIEW
+  ========================================================= */
+
   async function loadOverview() {
+
     await Promise.allSettled([
       loadStatistics(),
       loadApplications(),
@@ -1781,23 +2937,29 @@
     ]);
   }
 
+  /* =========================================================
+     EVENT HANDLERS
+  ========================================================= */
+
   function bindEvents() {
+
     elements.menuButton
       ?.addEventListener(
         'click',
-        openMobileMenu
-      );
+        () => {
 
-    elements.mobileOverlay
-      ?.addEventListener(
-        'click',
-        closeMobileMenu
+          elements.sidebar
+            ?.classList.toggle(
+              'open'
+            );
+        }
       );
 
     elements.logoutButton
       ?.addEventListener(
         'click',
         () => {
+
           localStorage.removeItem(
             'oyuki_token'
           );
@@ -1822,16 +2984,20 @@
       ?.querySelectorAll(
         '[data-modal-close]'
       )
-      .forEach(element => {
-        element.addEventListener(
-          'click',
-          closeModal
-        );
-      });
+      .forEach(
+        element => {
+
+          element.addEventListener(
+            'click',
+            closeModal
+          );
+        }
+      );
 
     document.addEventListener(
       'keydown',
       event => {
+
         if (
           event.key ===
           'Escape'
@@ -1844,38 +3010,91 @@
     document.addEventListener(
       'click',
       async event => {
-        const navButton =
+
+        /* NAVIGATION */
+
+        const nav =
           event.target.closest(
             '[data-section]'
           );
 
-        if (navButton) {
+        if (
+          nav
+        ) {
+
           showSection(
-            navButton.dataset.section
+            nav.dataset.section
           );
 
           return;
         }
 
-        const goButton =
+        const go =
           event.target.closest(
             '[data-go]'
           );
 
-        if (goButton) {
+        if (
+          go
+        ) {
+
           showSection(
-            goButton.dataset.go
+            go.dataset.go
           );
 
           return;
         }
+
+        /* CREATE MARKETER */
+
+        if (
+          event.target.closest(
+            '#createMarketerButton'
+          )
+        ) {
+
+          openCreateMarketer();
+
+          return;
+        }
+
+        /* CREATE MARKET AGENT */
+
+        if (
+          event.target.closest(
+            '#createMarketAgentButton'
+          )
+        ) {
+
+          await openCreateMarketAgent();
+
+          return;
+        }
+
+        /* CREATE MARKET */
+
+        if (
+          event.target.closest(
+            '#createMarketButton'
+          )
+        ) {
+
+          openCreateMarket();
+
+          return;
+        }
+
+        /* APPLICATION */
 
         const viewApplication =
           event.target.closest(
             '[data-view-application]'
           );
 
-        if (viewApplication) {
+        if (
+          viewApplication
+        ) {
+
           openApplication(
             viewApplication
               .dataset
@@ -1885,14 +3104,17 @@
           return;
         }
 
-        const approveButton =
+        const approveApplicationButton =
           event.target.closest(
             '[data-approve-application]'
           );
 
-        if (approveButton) {
+        if (
+          approveApplicationButton
+        ) {
+
           approveApplication(
-            approveButton
+            approveApplicationButton
               .dataset
               .approveApplication
           );
@@ -1900,14 +3122,17 @@
           return;
         }
 
-        const rejectButton =
+        const rejectApplicationButton =
           event.target.closest(
             '[data-reject-application]'
           );
 
-        if (rejectButton) {
+        if (
+          rejectApplicationButton
+        ) {
+
           showRejectApplication(
-            rejectButton
+            rejectApplicationButton
               .dataset
               .rejectApplication
           );
@@ -1923,6 +3148,7 @@
         if (
           confirmRejectApplication
         ) {
+
           rejectApplication(
             confirmRejectApplication
               .dataset
@@ -1932,12 +3158,17 @@
           return;
         }
 
+        /* USER */
+
         const manageUser =
           event.target.closest(
             '[data-manage-user]'
           );
 
-        if (manageUser) {
+        if (
+          manageUser
+        ) {
+
           openUserManager(
             manageUser
           );
@@ -1950,7 +3181,10 @@
             '[data-save-user-status]'
           );
 
-        if (saveUser) {
+        if (
+          saveUser
+        ) {
+
           saveUserStatus(
             saveUser
               .dataset
@@ -1960,6 +3194,8 @@
           return;
         }
 
+        /* PAYMENT */
+
         const confirmPaymentButton =
           event.target.closest(
             '[data-confirm-payment]'
@@ -1968,6 +3204,7 @@
         if (
           confirmPaymentButton
         ) {
+
           confirmPayment(
             confirmPaymentButton
               .dataset
@@ -1982,7 +3219,10 @@
             '[data-reject-payment]'
           );
 
-        if (rejectPaymentButton) {
+        if (
+          rejectPaymentButton
+        ) {
+
           showRejectPayment(
             rejectPaymentButton
               .dataset
@@ -2000,6 +3240,7 @@
         if (
           confirmRejectPayment
         ) {
+
           rejectPayment(
             confirmRejectPayment
               .dataset
@@ -2009,13 +3250,14 @@
           return;
         }
 
-        const appDownload = event.target.closest('[data-download-application]');
-        if (appDownload) { try { await LoadedApi.downloadFile(`/admin/applications/${appDownload.dataset.downloadApplication}/download`, `oyuki-application-${appDownload.dataset.downloadApplication}.json`); } catch (error) { showError(error); } return; }
+        if (
+          event.target.closest(
+            '[data-close-modal]'
+          )
+        ) {
 
-        const idDownload = event.target.closest('[data-download-id]');
-        if (idDownload) { try { await LoadedApi.downloadFile(`/admin/applications/${idDownload.dataset.downloadId}/documents/id`, `provider-id-${idDownload.dataset.downloadId}`); } catch (error) { showError(error); } return; }
-
-        if (event.target.closest('[data-close-modal]')) { closeModal(); }
+          closeModal();
+        }
       }
     );
 
@@ -2056,20 +3298,26 @@
       );
   }
 
+  /* =========================================================
+     INITIALISE
+  ========================================================= */
+
   async function initialise() {
+
     const user =
       requireAdmin();
 
-    if (!user) {
+    if (
+      !user
+    ) {
       return;
     }
-
-    closeModal();
-    closeMobileMenu();
 
     initialiseAdminName(
       user
     );
+
+    closeModal();
 
     bindEvents();
 
@@ -2080,11 +3328,15 @@
     document.readyState ===
     'loading'
   ) {
+
     document.addEventListener(
       'DOMContentLoaded',
       initialise
     );
+
   } else {
+
     initialise();
   }
+
 })();

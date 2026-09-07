@@ -3,6 +3,8 @@ package com.oyuki.auth.controller;
 import com.oyuki.auth.dto.*;
 import com.oyuki.auth.service.AuthService;
 import com.oyuki.auth.service.LoginService;
+import com.oyuki.auth.service.MarketerActivationService;
+import com.oyuki.auth.service.MarketAgentActivationService;
 import com.oyuki.auth.service.PasswordResetService;
 import com.oyuki.common.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -19,15 +21,21 @@ public class AuthController {
     private final AuthService authService;
     private final LoginService loginService;
     private final PasswordResetService passwordResetService;
+    private final MarketerActivationService marketerActivationService;
+    private final MarketAgentActivationService marketAgentActivationService;
 
     public AuthController(
             AuthService authService,
             LoginService loginService,
-            PasswordResetService passwordResetService
+            PasswordResetService passwordResetService,
+            MarketerActivationService marketerActivationService,
+            MarketAgentActivationService marketAgentActivationService
     ) {
         this.authService = authService;
         this.loginService = loginService;
         this.passwordResetService = passwordResetService;
+        this.marketerActivationService = marketerActivationService;
+        this.marketAgentActivationService = marketAgentActivationService;
     }
 
     @PostMapping("/register")
@@ -69,6 +77,30 @@ public class AuthController {
                 ApiResponse.success(
                         "Registration verified successfully",
                         result
+                )
+        );
+    }
+
+    @PostMapping("/activate-marketer")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> activateMarketer(
+            @Valid @RequestBody ActivateMarketerRequest request
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Marketer account activated successfully",
+                        marketerActivationService.activate(request)
+                )
+        );
+    }
+
+    @PostMapping("/activate-market-agent")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> activateMarketAgent(
+            @Valid @RequestBody ActivateMarketerRequest request
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Market Agent account activated successfully",
+                        marketAgentActivationService.activate(request)
                 )
         );
     }

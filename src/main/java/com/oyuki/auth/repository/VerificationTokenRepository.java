@@ -7,9 +7,6 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface VerificationTokenRepository
-        extends JpaRepository<VerificationToken, Long> {
-
-    Optional<VerificationToken>
-    findTopByUserIdAndUsedFalseOrderByCreatedAtDesc(Long userId);
+public interface VerificationTokenRepository extends JpaRepository<VerificationToken, Long> {
+    Optional<VerificationToken> findTopByUserIdAndUsedFalseOrderByCreatedAtDesc(Long userId);
 }

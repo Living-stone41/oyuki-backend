@@ -1618,6 +1618,7 @@
               <th>Referral code</th>
               <th>Status</th>
               <th>Created</th>
+              <th>Activation</th>
             </tr>
           </thead>
 
@@ -1679,6 +1680,12 @@
                       )}
                     </td>
 
+                    <td>
+                      ${marketer.email || marketer.phoneNumber
+                        ? `<a href="https://oyukimarketplace.com/marketer-activate.html?email=${encodeURIComponent(marketer.email || '')}&phone=${encodeURIComponent(marketer.phoneNumber || '')}" target="_blank" rel="noopener">Activation page</a>`
+                        : '—'}
+                    </td>
+
                   </tr>
                 `
               )
@@ -1716,7 +1723,7 @@
 
       <p>
         Marketer accounts are created by Oyuki Admin.
-        An activation OTP will be sent automatically.
+        An activation OTP will be sent automatically to every contact provided. At least one email or phone number is required.
       </p>
 
       <form id="createMarketerForm">
@@ -1733,24 +1740,22 @@
         >
 
         <label>
-          Email address
+          Email address (optional if phone is provided)
         </label>
 
         <input
           name="email"
           type="email"
-          required
           placeholder="name@example.com"
         >
 
         <label>
-          Phone number
+          Phone number (optional if email is provided)
         </label>
 
         <input
           name="phoneNumber"
           type="tel"
-          required
           placeholder="+234..."
         >
 
@@ -2211,6 +2216,7 @@
               <th>LGA</th>
               <th>Market</th>
               <th>Status</th>
+              <th>Activation</th>
               <th>Created</th>
             </tr>
           </thead>
@@ -2275,6 +2281,12 @@
                     </td>
 
                     <td>
+                      ${agent.email || agent.phoneNumber
+                        ? `<a href="https://oyukimarketplace.com/market-agent-activate.html?email=${encodeURIComponent(agent.email || '')}&phone=${encodeURIComponent(agent.phoneNumber || '')}" target="_blank" rel="noopener">Activation page</a>`
+                        : '—'}
+                    </td>
+
+                    <td>
                       ${formatDate(
                         agent.createdAt
                       )}
@@ -2309,230 +2321,93 @@
   }
 
   async function openCreateMarketAgent() {
-
-    let markets = [];
-
-    try {
-
-      markets =
-        arrayFrom(
-          await Api.get(
-            '/admin/markets'
-          )
-        );
-
-    } catch (
-      error
-    ) {
-
-      console.warn(
-        'Could not load markets',
-        error
-      );
-    }
+    let states = [];
+    try { states = arrayFrom(await Api.get('/market-directory/states')); }
+    catch (error) { console.warn('Could not load states', error); }
 
     openModal(`
-      <h2 id="modalTitle">
-        Create Market Agent
-      </h2>
-
-      <p>
-        Create an Oyuki market agent and assign the agent to a local market.
-      </p>
-
+      <h2 id="modalTitle">Create Market Agent</h2>
+      <p>Create an Oyuki market agent and manually assign the agent to a State, LGA and Market. At least one email or phone number is required for activation.</p>
       <form id="createMarketAgentForm">
-
-        <label>
-          Full name
-        </label>
-
-        <input
-          name="fullName"
-          required
-          placeholder="Agent full name"
-        >
-
-        <label>
-          Email address
-        </label>
-
-        <input
-          name="email"
-          type="email"
-          required
-          placeholder="agent@example.com"
-        >
-
-        <label>
-          Phone number
-        </label>
-
-        <input
-          name="phoneNumber"
-          type="tel"
-          required
-          placeholder="+234..."
-        >
-
-        <label>
-          Assigned market
-        </label>
-
-        <select
-          name="marketId"
-          required
-        >
-
-          <option value="">
-            Select market
-          </option>
-
-          ${markets
-            .map(
-              market => `
-                <option
-                  value="${escapeHtml(
-                    market.id
-                  )}"
-                >
-
-                  ${escapeHtml(
-                    [
-                      market.name ||
-                      market.marketName,
-
-                      market.lgaName ||
-                      market.lga?.name,
-
-                      market.stateName ||
-                      market.state?.name
-                    ]
-                      .filter(Boolean)
-                      .join(
-                        ' — '
-                      )
-                  )}
-
-                </option>
-              `
-            )
-            .join('')}
-
+        <label>Full name</label>
+        <input name="fullName" required placeholder="Agent full name">
+        <label>Email address</label>
+        <input name="email" type="email" placeholder="agent@example.com">
+        <label>Phone number</label>
+        <input name="phoneNumber" type="tel" placeholder="+234...">
+        <label>State</label>
+        <select name="stateId" id="agentStateId" required>
+          <option value="">Select state</option>
+          ${states.map(state => `<option value="${escapeHtml(state.id)}">${escapeHtml(state.name)}</option>`).join('')}
         </select>
-
-        <label>
-          Emergency contact
-        </label>
-
-        <input
-          name="emergencyContact"
-          placeholder="Optional emergency contact"
-        >
-
+        <label>LGA</label>
+        <select name="lgaId" id="agentLgaId" required disabled>
+          <option value="">Select state first</option>
+        </select>
+        <label>Market</label>
+        <select name="marketId" id="agentMarketId" required disabled>
+          <option value="">Select LGA first</option>
+        </select>
+        <label>Emergency contact name</label>
+        <input name="emergencyContactName" placeholder="Optional">
+        <label>Emergency contact phone</label>
+        <input name="emergencyContactPhone" type="tel" placeholder="Optional">
         <div class="modal-actions">
-
-          <button
-            class="secondary-button"
-            type="button"
-            data-close-modal
-          >
-            Cancel
-          </button>
-
-          <button
-            class="primary-button"
-            type="submit"
-          >
-            Create Market Agent
-          </button>
-
+          <button class="secondary-button" type="button" data-close-modal>Cancel</button>
+          <button class="primary-button" type="submit">Create Market Agent</button>
         </div>
-
       </form>
     `);
 
-    document
-      .getElementById(
-        'createMarketAgentForm'
-      )
-      ?.addEventListener(
-        'submit',
-        createMarketAgent
-      );
+    const stateSelect = document.getElementById('agentStateId');
+    const lgaSelect = document.getElementById('agentLgaId');
+    const marketSelect = document.getElementById('agentMarketId');
+
+    stateSelect?.addEventListener('change', async () => {
+      const stateId = stateSelect.value;
+      lgaSelect.innerHTML = '<option value="">Loading LGAs…</option>';
+      lgaSelect.disabled = true;
+      marketSelect.innerHTML = '<option value="">Select LGA first</option>';
+      marketSelect.disabled = true;
+      if (!stateId) { lgaSelect.innerHTML = '<option value="">Select state first</option>'; return; }
+      try {
+        const lgas = arrayFrom(await Api.get(`/market-directory/lgas?stateId=${encodeURIComponent(stateId)}`));
+        lgaSelect.innerHTML = '<option value="">Select LGA</option>' + lgas.map(lga => `<option value="${escapeHtml(lga.id)}">${escapeHtml(lga.name)}</option>`).join('');
+        lgaSelect.disabled = false;
+      } catch (error) { lgaSelect.innerHTML = '<option value="">Unable to load LGAs</option>'; showError(error); }
+    });
+
+    lgaSelect?.addEventListener('change', async () => {
+      const lgaId = lgaSelect.value;
+      marketSelect.innerHTML = '<option value="">Loading markets…</option>';
+      marketSelect.disabled = true;
+      if (!lgaId) { marketSelect.innerHTML = '<option value="">Select LGA first</option>'; return; }
+      try {
+        const markets = arrayFrom(await Api.get(`/market-directory/markets?lgaId=${encodeURIComponent(lgaId)}`));
+        marketSelect.innerHTML = '<option value="">Select market</option>' + markets.map(market => `<option value="${escapeHtml(market.id)}">${escapeHtml(market.name)}</option>`).join('');
+        marketSelect.disabled = false;
+      } catch (error) { marketSelect.innerHTML = '<option value="">Unable to load markets</option>'; showError(error); }
+    });
+    document.getElementById('createMarketAgentForm')?.addEventListener('submit', createMarketAgent);
   }
 
-  async function createMarketAgent(
-    event
-  ) {
-
+  async function createMarketAgent(event) {
     event.preventDefault();
-
-    const form =
-      event.currentTarget;
-
-    const button =
-      form.querySelector(
-        'button[type="submit"]'
-      );
-
-    const payload =
-      Object.fromEntries(
-        new FormData(form)
-          .entries()
-      );
-
-    if (
-      payload.marketId
-    ) {
-
-      payload.marketId =
-        Number(
-          payload.marketId
-        );
-    }
-
+    const form = event.currentTarget;
+    const button = form.querySelector('button[type="submit"]');
+    const payload = Object.fromEntries(new FormData(form).entries());
+    payload.stateId = Number(payload.stateId);
+    payload.lgaId = Number(payload.lgaId);
+    payload.marketId = Number(payload.marketId);
     try {
-
-      if (
-        button
-      ) {
-
-        button.disabled =
-          true;
-
-        button.textContent =
-          'Creating…';
-      }
-
-      await Api.post(
-        '/admin/market-agents',
-        payload
-      );
-
+      if (button) { button.disabled = true; button.textContent = 'Creating…'; }
+      await Api.post('/admin/market-agents', payload);
       closeModal();
-
-      showAlert(
-        'Market agent created. Activation OTP has been sent.'
-      );
-
+      showAlert('Market Agent created. Activation OTP has been sent.');
       await loadMarketAgents();
-
-    } catch (
-      error
-    ) {
-
+    } catch (error) {
       showError(error);
-
-      if (
-        button
-      ) {
-
-        button.disabled =
-          false;
-
-        button.textContent =
-          'Create Market Agent';
-      }
+      if (button) { button.disabled = false; button.textContent = 'Create Market Agent'; }
     }
   }
 

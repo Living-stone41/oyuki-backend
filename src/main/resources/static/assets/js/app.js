@@ -1,26 +1,20 @@
-/* Oyuki frontend — QServers frontend + Railway backend */
-
+/* Oyuki Frontend — QServers Frontend + Railway Backend */
 (function () {
   'use strict';
 
-  const WEBSITE_ORIGIN =
-    'https://oyukimarketplace.com';
+  const WEBSITE_ORIGIN = 'https://oyukimarketplace.com';
 
   const API_ORIGIN =
     'https://illustrious-nurturing-production-8169.up.railway.app';
 
-  const API_BASE_URL =
-    `${API_ORIGIN}/api`;
+  const API_BASE_URL = `${API_ORIGIN}/api`;
 
-  const ADMIN_HOST =
-    'admin.oyukimarketplace.com';
+  const ADMIN_HOST = 'admin.oyukimarketplace.com';
 
   const IS_ADMIN_SUBDOMAIN =
-    window.location.hostname.toLowerCase() ===
-    ADMIN_HOST;
+    window.location.hostname.toLowerCase() === ADMIN_HOST;
 
-  const FALLBACK_IMAGE =
-    '/assets/images/hero.jpg';
+  const FALLBACK_IMAGE = '/assets/images/hero.jpg';
 
   const STORAGE = {
     token: 'oyuki_token',
@@ -35,8 +29,6 @@
     wishlist: 'oy_wishlist',
     orders: 'oy_orders',
     products: 'oy_products',
-    meals: 'oy_meals',
-    kitchens: 'oy_kitchens',
     contacts: 'oy_contacts',
     reviews: 'oy_reviews',
     notifs: 'oy_notifs',
@@ -45,18 +37,13 @@
 
   function load(key, fallback = []) {
     try {
-      const value =
-        localStorage.getItem(key);
+      const value = localStorage.getItem(key);
 
       return value
         ? JSON.parse(value)
         : fallback;
     } catch (error) {
-      console.warn(
-        `Unable to read ${key}:`,
-        error
-      );
-
+      console.warn(`Unable to read ${key}:`, error);
       return fallback;
     }
   }
@@ -75,7 +62,7 @@
         '&': '&amp;',
         '<': '&lt;',
         '>': '&gt;',
-        "'": '&#39;',
+        "'": '&#039;',
         '"': '&quot;'
       })[character]
     );
@@ -95,10 +82,7 @@
     return payload;
   }
 
-  function errorMessage(
-    payload,
-    fallback
-  ) {
+  function errorMessage(payload, fallback) {
     if (!payload) {
       return fallback;
     }
@@ -145,10 +129,7 @@
   };
 
   const Api = {
-    async request(
-      path,
-      options = {}
-    ) {
+    async request(path, options = {}) {
       const {
         method = 'GET',
         body,
@@ -312,13 +293,13 @@
       return '/seller.html';
     }
 
-    if (value === 'KITCHEN') {
-      return '/kitchen.html';
+    if (value === 'MARKET_AGENT') {
+      return '/market-agent.html';
     }
 
-    if (value === 'MARKET_AGENT') { return '/market-agent.html'; }
-
-    if (value === 'MARKET_SUPERVISOR') { return '/market-agent.html'; }
+    if (value === 'MARKET_SUPERVISOR') {
+      return '/market-agent.html';
+    }
 
     if (value === 'ADMIN') {
       return '/admin.html';
@@ -331,9 +312,7 @@
       return '/logistics-admin.html';
     }
 
-    if (
-      value === 'ACCOUNT_OFFICER'
-    ) {
+    if (value === 'ACCOUNT_OFFICER') {
       return '/account-officer.html';
     }
 
@@ -380,10 +359,7 @@
       );
     },
 
-    async login(
-      identifier,
-      password
-    ) {
+    async login(identifier, password) {
       const result = unwrap(
         await Api.post(
           '/auth/login',
@@ -547,8 +523,7 @@
 
       if (
         requiredRole &&
-        currentRole !==
-          requiredRole &&
+        currentRole !== requiredRole &&
         currentRole !== 'ADMIN'
       ) {
         Toast.show(
@@ -638,9 +613,7 @@
     ).toLocaleString('en-NG')} ${unit}`;
   }
 
-  function primaryVariant(
-    product
-  ) {
+  function primaryVariant(product) {
     const variants =
       Array.isArray(product.variants)
         ? product.variants
@@ -659,9 +632,7 @@
     );
   }
 
-  function normalizeProduct(
-    product
-  ) {
+  function normalizeProduct(product) {
     const variant =
       primaryVariant(product);
 
@@ -679,25 +650,34 @@
 
     return {
       ...product,
+
       price: Number(
         variant?.price || 0
       ),
+
       variantId:
         variant?.id || null,
+
       variant,
+
       unit:
         unitLabel(variant),
+
       image:
         imageUrl(
           primary?.imageUrl
         ),
+
       rating: Number(
         product.averageRating || 0
       ),
+
       desc:
         product.description || '',
+
       seller:
         product.ownerName || '',
+
       location: [
         product.area,
         product.lga,
@@ -1108,10 +1088,11 @@
         return;
       }
 
-      const existing = load(
-        STORAGE.recentlyViewed,
-        []
-      );
+      const existing =
+        load(
+          STORAGE.recentlyViewed,
+          []
+        );
 
       const item = {
         id: product.id,
@@ -1255,45 +1236,20 @@
   };
 
   const ProviderProfiles = {
-    get(role) {
-      const type =
-        String(role || '')
-          .toUpperCase();
-
+    get() {
       return Api.get(
-        type === 'KITCHEN'
-          ? '/kitchen/profile'
-          : '/seller/profile'
+        '/seller/profile'
       );
     },
 
-    save(role, data) {
-      const type =
-        String(role || '')
-          .toUpperCase();
-
+    save(data) {
       return Api.put(
-        type === 'KITCHEN'
-          ? '/kitchen/profile'
-          : '/seller/profile',
+        '/seller/profile',
         data
       );
     },
 
-    upload(
-      role,
-      kind,
-      file
-    ) {
-      const type =
-        String(role || '')
-          .toUpperCase();
-
-      const base =
-        type === 'KITCHEN'
-          ? '/kitchen/profile'
-          : '/seller/profile';
-
+    upload(kind, file) {
       const form =
         new FormData();
 
@@ -1303,7 +1259,7 @@
       );
 
       return Api.request(
-        `${base}/${kind}`,
+        `/seller/profile/${kind}`,
         {
           method: 'POST',
           body: form
@@ -1314,7 +1270,9 @@
 
   const ProviderProducts = {
     list() {
-      return Api.get('/products');
+      return Api.get(
+        '/products'
+      );
     },
 
     get(id) {
@@ -1444,9 +1402,7 @@
       );
     },
 
-    providerSummary(
-      providerId
-    ) {
+    providerSummary(providerId) {
       return Api.get(
         `/reviews/providers/${providerId}/summary`,
         false
@@ -1575,7 +1531,8 @@
       return Api.patch(
         `/admin/payments/${id}/confirm`,
         {
-          note: note || null
+          note:
+            note || null
         }
       );
     },
@@ -1772,9 +1729,7 @@
           .toLocaleString()
       : '—';
 
-  function productCard(
-    product
-  ) {
+  function productCard(product) {
     const item =
       normalizeProduct(product);
 
@@ -1789,6 +1744,7 @@
     return `
       <div class="col-sm-6 col-lg-3 mb-4">
         <div class="product-card h-100">
+
           <a
             href="/product.html?id=${item.id}"
             class="product-img"
@@ -1801,7 +1757,9 @@
           </a>
 
           <div class="p-3">
+
             <div class="d-flex justify-content-between gap-2">
+
               <span class="badge-soft">
                 ${escapeHtml(
                   item.category ||
@@ -1813,6 +1771,7 @@
               <span class="rating">
                 ★ ${item.rating.toFixed(1)}
               </span>
+
             </div>
 
             <a
@@ -1825,7 +1784,9 @@
             </a>
 
             <div class="text-muted small mb-2">
-              ${escapeHtml(item.ownerName || '')}
+              ${escapeHtml(
+                item.ownerName || ''
+              )}
 
               ${
                 item.location
@@ -1835,7 +1796,9 @@
             </div>
 
             <div class="d-flex align-items-end justify-content-between gap-2">
+
               <div>
+
                 <strong class="text-success">
                   ${fmt(item.price)}
                 </strong>
@@ -1843,9 +1806,11 @@
                 <div class="text-muted small">
                   ${escapeHtml(item.unit)}
                 </div>
+
               </div>
 
               <div class="d-flex gap-1">
+
                 <button
                   type="button"
                   class="btn btn-sm btn-outline-brand"
@@ -1863,94 +1828,15 @@
                 >
                   <i class="bi bi-basket2"></i>
                 </button>
+
               </div>
+
             </div>
+
           </div>
         </div>
       </div>
     `;
-  }
-
-  function kitchenCard(
-    kitchen
-  ) {
-    return `
-      <div class="col-md-4 mb-4">
-        <div class="kitchen-card h-100">
-          <img
-            src="${escapeHtml(
-              kitchen.image ||
-              FALLBACK_IMAGE
-            )}"
-            alt="${escapeHtml(
-              kitchen.name ||
-              'Kitchen'
-            )}"
-            onerror="this.src='${FALLBACK_IMAGE}'"
-          >
-
-          <div class="p-3">
-            <h5>
-              ${escapeHtml(
-                kitchen.name ||
-                'Kitchen'
-              )}
-            </h5>
-
-            <p class="text-muted small mb-2">
-              Kitchen products on Oyuki
-            </p>
-
-            <a
-              href="/kitchen-detail.html?id=${kitchen.id}"
-              class="btn btn-outline-brand btn-sm"
-            >
-              View meals
-            </a>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  function kitchensFromProducts(
-    products
-  ) {
-    const map =
-      new Map();
-
-    products
-      .filter(
-        product =>
-          String(
-            product.ownerRole ||
-            ''
-          ).toUpperCase() ===
-          'KITCHEN'
-      )
-      .forEach(product => {
-        if (
-          !map.has(
-            product.ownerId
-          )
-        ) {
-          map.set(
-            product.ownerId,
-            {
-              id:
-                product.ownerId,
-              name:
-                product.ownerName,
-              image:
-                product.image
-            }
-          );
-        }
-      });
-
-    return [
-      ...map.values()
-    ];
   }
 
   async function addToCart(
@@ -2018,220 +1904,346 @@
     }
   }
 
-function renderNav() {
-  const holder =
-    document.getElementById('oy-navbar');
+  function renderNav() {
+    const holder =
+      document.getElementById(
+        'oy-navbar'
+      );
 
-  if (!holder) {
-    return;
-  }
+    if (!holder) {
+      return;
+    }
 
-  const user =
-    Auth.current();
+    const user =
+      Auth.current();
 
-  const account = user
-    ? `
-      <div class="dropdown">
-        <button
-          class="btn btn-ghost dropdown-toggle"
-          type="button"
-          data-bs-toggle="dropdown"
-          aria-expanded="false"
+    const account = user
+      ? `
+        <div class="dropdown">
+
+          <button
+            class="btn btn-ghost dropdown-toggle"
+            type="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            <i class="bi bi-person-circle"></i>
+
+            ${escapeHtml(
+              (
+                user.fullName ||
+                'Account'
+              ).split(' ')[0]
+            )}
+          </button>
+
+          <ul class="dropdown-menu dropdown-menu-end">
+
+            <li>
+              <a
+                class="dropdown-item"
+                href="${rolePage(user.role)}"
+              >
+                Dashboard
+              </a>
+            </li>
+
+            <li>
+              <a
+                class="dropdown-item"
+                href="/feature-center.html"
+              >
+                Feature Centre
+              </a>
+            </li>
+
+            <li>
+              <a
+                class="dropdown-item"
+                href="/wallet.html"
+              >
+                <i class="bi bi-wallet2 me-2"></i>
+                Wallet
+              </a>
+            </li>
+
+            <li>
+              <a
+                class="dropdown-item"
+                href="/referrals.html"
+              >
+                <i class="bi bi-gift me-2"></i>
+                Refer & Earn
+              </a>
+            </li>
+
+            ${
+              Auth.isCustomer()
+                ? `
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      href="/cart.html"
+                    >
+                      Cart
+                    </a>
+                  </li>
+                `
+                : ''
+            }
+
+            <li>
+              <hr class="dropdown-divider">
+            </li>
+
+            <li>
+              <a
+                class="dropdown-item"
+                href="#"
+                onclick="window.Oyuki.Auth.logout(); return false;"
+              >
+                Log out
+              </a>
+            </li>
+
+          </ul>
+        </div>
+      `
+      : `
+        <a
+          href="/login.html"
+          class="btn btn-ghost"
         >
-          <i class="bi bi-person-circle"></i>
+          Log in
+        </a>
 
-          ${escapeHtml(
-            (
-              user.fullName ||
-              'Account'
-            ).split(' ')[0]
-          )}
-        </button>
+        <a
+          href="/register.html"
+          class="btn btn-brand ms-2"
+        >
+          Sign up
+        </a>
+      `;
 
-        <ul class="dropdown-menu dropdown-menu-end">
-          <li>
-            <a
-              class="dropdown-item"
-              href="${rolePage(user.role)}"
-            >
-              Dashboard
-            </a>
-          </li>
-
-          <li>
-            <a
-              class="dropdown-item"
-              href="/feature-center.html"
-            >
-              Feature Centre
-            </a>
-          </li>
-
-          <li><a class="dropdown-item" href="/wallet.html"><i class="bi bi-wallet2 me-2"></i>Wallet</a></li>
-          <li><a class="dropdown-item" href="/referrals.html"><i class="bi bi-gift me-2"></i>Refer & Earn</a></li>
-
-          ${
-            Auth.isCustomer()
-              ? `
-                <li>
-                  <a
-                    class="dropdown-item"
-                    href="/cart.html"
-                  >
-                    Cart
-                  </a>
-                </li>
-              `
-              : ''
-          }
-
-          <li>
-            <hr class="dropdown-divider">
-          </li>
-
-          <li>
-            <a
-              class="dropdown-item"
-              href="#"
-              onclick="window.Oyuki.Auth.logout(); return false;"
-            >
-              Log out
-            </a>
-          </li>
-        </ul>
-      </div>
-    `
-    : `
+    const desktopLogo = `
       <a
-        href="/login.html"
-        class="btn btn-ghost"
+        href="/home.html"
+        class="oy-brand"
+        aria-label="Oyuki homepage"
+        style="
+          display:inline-flex;
+          align-items:center;
+          gap:10px;
+          flex-shrink:0;
+          text-decoration:none;
+        "
       >
-        Log in
-      </a>
 
-      <a
-        href="/register.html"
-        class="btn btn-brand ms-2"
-      >
-        Sign up
+        <img
+          src="https://oyukimarketplace.com/assets/images/logo.png?v=100"
+          alt="Oyuki logo"
+          width="48"
+          height="48"
+          style="
+            display:block !important;
+            visibility:visible !important;
+            opacity:1 !important;
+            width:48px !important;
+            height:48px !important;
+            min-width:48px !important;
+            max-width:48px !important;
+            object-fit:contain !important;
+            object-position:center !important;
+            flex-shrink:0 !important;
+          "
+        >
+
+        <span
+          style="
+            color:#075e36;
+            font-family:Poppins, sans-serif;
+            font-size:1.35rem;
+            font-weight:800;
+            line-height:1;
+            letter-spacing:-0.02em;
+          "
+        >
+          Oyuki
+        </span>
+
       </a>
     `;
 
-  const desktopLogo = `
-    <a
-      href="/home.html"
-      class="oy-brand"
-      aria-label="Oyuki homepage"
-      style="
-        display:inline-flex;
-        align-items:center;
-        gap:10px;
-        flex-shrink:0;
-        text-decoration:none;
-      "
-    >
-      <img
-        src="https://oyukimarketplace.com/assets/images/logo.png?v=100"
-        alt="Oyuki logo"
-        width="48"
-        height="48"
+    const mobileLogo = `
+      <a
+        id="oyMenuLabel"
+        href="/home.html"
+        class="oy-brand"
+        aria-label="Oyuki homepage"
         style="
-          display:block !important;
-          visibility:visible !important;
-          opacity:1 !important;
-          width:48px !important;
-          height:48px !important;
-          min-width:48px !important;
-          max-width:48px !important;
-          object-fit:contain !important;
-          object-position:center !important;
-          flex-shrink:0 !important;
+          display:inline-flex;
+          align-items:center;
+          gap:10px;
+          text-decoration:none;
         "
       >
 
-      <span
-        style="
-          color:#075e36;
-          font-family:Poppins, sans-serif;
-          font-size:1.35rem;
-          font-weight:800;
-          line-height:1;
-          letter-spacing:-0.02em;
-        "
-      >
-        Oyuki
-      </span>
-    </a>
-  `;
-
-  const mobileLogo = `
-    <a
-      id="oyMenuLabel"
-      href="/home.html"
-      class="oy-brand"
-      aria-label="Oyuki homepage"
-      style="
-        display:inline-flex;
-        align-items:center;
-        gap:10px;
-        text-decoration:none;
-      "
-    >
-      <img
-        src="https://oyukimarketplace.com/assets/images/logo.png?v=100"
-        alt="Oyuki logo"
-        width="44"
-        height="44"
-        style="
-          display:block !important;
-          visibility:visible !important;
-          opacity:1 !important;
-          width:44px !important;
-          height:44px !important;
-          min-width:44px !important;
-          max-width:44px !important;
-          object-fit:contain !important;
-          object-position:center !important;
-          flex-shrink:0 !important;
-        "
-      >
-
-      <span
-        style="
-          color:#075e36;
-          font-family:Poppins, sans-serif;
-          font-size:1.2rem;
-          font-weight:800;
-          line-height:1;
-          letter-spacing:-0.02em;
-        "
-      >
-        Oyuki
-      </span>
-    </a>
-  `;
-
-  holder.innerHTML = `
-    <nav class="oy-nav">
-      <div
-        class="container d-flex align-items-center justify-content-between"
-      >
-        ${desktopLogo}
-
-        <button
-          class="btn btn-ghost d-lg-none"
-          type="button"
-          data-bs-toggle="offcanvas"
-          data-bs-target="#oyMenu"
-          aria-controls="oyMenu"
-          aria-label="Open navigation"
+        <img
+          src="https://oyukimarketplace.com/assets/images/logo.png?v=100"
+          alt="Oyuki logo"
+          width="44"
+          height="44"
+          style="
+            display:block !important;
+            visibility:visible !important;
+            opacity:1 !important;
+            width:44px !important;
+            height:44px !important;
+            min-width:44px !important;
+            max-width:44px !important;
+            object-fit:contain !important;
+            object-position:center !important;
+            flex-shrink:0 !important;
+          "
         >
-          <i class="bi bi-list"></i>
-        </button>
+
+        <span
+          style="
+            color:#075e36;
+            font-family:Poppins, sans-serif;
+            font-size:1.2rem;
+            font-weight:800;
+            line-height:1;
+            letter-spacing:-0.02em;
+          "
+        >
+          Oyuki
+        </span>
+
+      </a>
+    `;
+
+    holder.innerHTML = `
+      <nav class="oy-nav">
 
         <div
-          class="d-none d-lg-flex align-items-center gap-1"
+          class="container d-flex align-items-center justify-content-between"
         >
+
+          ${desktopLogo}
+
+          <button
+            class="btn btn-ghost d-lg-none"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#oyMenu"
+            aria-controls="oyMenu"
+            aria-label="Open navigation"
+          >
+            <i class="bi bi-list"></i>
+          </button>
+
+          <div
+            class="d-none d-lg-flex align-items-center gap-1"
+          >
+
+            <a
+              class="nav-link"
+              href="/home.html"
+            >
+              Home
+            </a>
+
+            <a
+              class="nav-link"
+              href="/shop.html"
+            >
+              Marketplace
+            </a>
+
+            <a
+              class="nav-link"
+              href="/markets.html"
+            >
+              Market Square
+            </a>
+
+            <a
+              class="nav-link"
+              href="/about.html"
+            >
+              About
+            </a>
+
+            <a
+              class="nav-link"
+              href="/contact.html"
+            >
+              Contact
+            </a>
+
+          </div>
+
+          <div
+            class="d-none d-lg-flex align-items-center"
+          >
+
+            ${
+              Auth.isCustomer()
+                ? `
+                  <a
+                    href="/cart.html"
+                    class="btn btn-ghost me-2 position-relative"
+                    aria-label="Open cart"
+                  >
+
+                    <i class="bi bi-basket2"></i>
+
+                    <span
+                      id="cart-badge"
+                      class="cart-badge"
+                      style="display:none"
+                    >
+                      0
+                    </span>
+
+                  </a>
+                `
+                : ''
+            }
+
+            ${account}
+
+          </div>
+
+        </div>
+
+      </nav>
+
+      <div
+        class="offcanvas offcanvas-end"
+        tabindex="-1"
+        id="oyMenu"
+        aria-labelledby="oyMenuLabel"
+      >
+
+        <div class="offcanvas-header">
+
+          ${mobileLogo}
+
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="offcanvas"
+            aria-label="Close"
+          ></button>
+
+        </div>
+
+        <div
+          class="offcanvas-body d-flex flex-column gap-2"
+        >
+
           <a
             class="nav-link"
             href="/home.html"
@@ -2255,20 +2267,6 @@ function renderNav() {
 
           <a
             class="nav-link"
-            href="/meals.html"
-          >
-            Ready Meals
-          </a>
-
-          <a
-            class="nav-link"
-            href="/kitchens.html"
-          >
-            Kitchens
-          </a>
-
-          <a
-            class="nav-link"
             href="/about.html"
           >
             About
@@ -2280,145 +2278,57 @@ function renderNav() {
           >
             Contact
           </a>
-        </div>
 
-        <div
-          class="d-none d-lg-flex align-items-center"
-        >
+          <hr>
+
           ${
             Auth.isCustomer()
               ? `
                 <a
+                  class="nav-link"
                   href="/cart.html"
-                  class="btn btn-ghost me-2 position-relative"
-                  aria-label="Open cart"
                 >
-                  <i class="bi bi-basket2"></i>
-
-                  <span
-                    id="cart-badge"
-                    class="cart-badge"
-                    style="display:none"
-                  >
-                    0
-                  </span>
+                  <i class="bi bi-basket2 me-2"></i>
+                  Cart
                 </a>
               `
               : ''
           }
 
           ${account}
+
         </div>
+
       </div>
-    </nav>
+    `;
 
-    <div
-      class="offcanvas offcanvas-end"
-      tabindex="-1"
-      id="oyMenu"
-      aria-labelledby="oyMenuLabel"
-    >
-      <div class="offcanvas-header">
-        ${mobileLogo}
+    const currentPage =
+      window.location.pathname
+        .split('/')
+        .pop() ||
+      'home.html';
 
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="offcanvas"
-          aria-label="Close"
-        ></button>
-      </div>
+    holder
+      .querySelectorAll('.nav-link')
+      .forEach(link => {
+        const href =
+          link.getAttribute('href') || '';
 
-      <div
-        class="offcanvas-body d-flex flex-column gap-2"
-      >
-        <a
-          class="nav-link"
-          href="/home.html"
-        >
-          Home
-        </a>
+        const linkPage =
+          href
+            .split('/')
+            .pop();
 
-        <a
-          class="nav-link"
-          href="/shop.html"
-        >
-          Marketplace
-        </a>
-
-        <a
-          class="nav-link"
-          href="/meals.html"
-        >
-          Ready Meals
-        </a>
-
-        <a
-          class="nav-link"
-          href="/kitchens.html"
-        >
-          Kitchens
-        </a>
-
-        <a
-          class="nav-link"
-          href="/about.html"
-        >
-          About
-        </a>
-
-        <a
-          class="nav-link"
-          href="/contact.html"
-        >
-          Contact
-        </a>
-
-        <hr>
-
-        ${
-          Auth.isCustomer()
-            ? `
-              <a
-                class="nav-link"
-                href="/cart.html"
-              >
-                <i class="bi bi-basket2 me-2"></i>
-                Cart
-              </a>
-            `
-            : ''
+        if (
+          linkPage === currentPage
+        ) {
+          link.classList.add(
+            'active'
+          );
         }
+      });
+  }
 
-        ${account}
-      </div>
-    </div>
-  `;
-
-  const currentPage =
-    window.location.pathname
-      .split('/')
-      .pop() ||
-    'home.html';
-
-  holder
-    .querySelectorAll('.nav-link')
-    .forEach(link => {
-      const href =
-        link.getAttribute('href') || '';
-
-      const linkPage =
-        href
-          .split('/')
-          .pop();
-
-      if (
-        linkPage === currentPage
-      ) {
-        link.classList.add('active');
-      }
-    });
-}
   function renderFooter() {
     const holder =
       document.getElementById(
@@ -2438,20 +2348,23 @@ function renderNav() {
         <div class="container position-relative">
 
           <div class="footer-cta">
+
             <div>
+
               <span class="footer-eyebrow">
                 Oyuki Marketplace
               </span>
 
               <h2>
-                Fresh produce and trusted meals,
+                Fresh farm produce,
                 all in one place.
               </h2>
 
               <p>
-                Discover farmers, food sellers and kitchens
+                Discover farmers and food sellers
                 serving customers across Nigeria.
               </p>
+
             </div>
 
             <a
@@ -2461,28 +2374,36 @@ function renderNav() {
               Shop now
               <i class="bi bi-arrow-right"></i>
             </a>
+
           </div>
 
           <div class="row g-5 footer-main">
 
             <div class="col-lg-4 col-md-6">
+
               <a
                 href="/home.html"
                 class="footer-brand"
               >
+
                 <span class="footer-brand-icon">
                   O
                 </span>
 
-                <span>Oyuki</span>
+                <span>
+                  Oyuki
+                </span>
+
               </a>
 
               <p class="footer-description">
-                Fresh farm produce, ready meals and trusted
-                kitchens delivered conveniently across Nigeria.
+                Fresh farm produce and trusted
+                sellers delivered conveniently
+                across Nigeria.
               </p>
 
               <div class="footer-socials">
+
                 <a
                   href="#"
                   aria-label="Instagram"
@@ -2512,43 +2433,47 @@ function renderNav() {
                 >
                   <i class="bi bi-whatsapp"></i>
                 </a>
+
               </div>
+
             </div>
 
             <div class="col-6 col-md-3 col-lg-2">
+
               <h6 class="footer-title">
                 Explore
               </h6>
 
               <div class="footer-links">
+
                 <a href="/shop.html">
                   Marketplace
-                </a>
-
-                <a href="/meals.html">
-                  Ready Meals
-                </a>
-
-                <a href="/kitchens.html">
-                  Kitchens
                 </a>
 
                 <a href="/home.html#freshFromFarm">
                   Farm Produce
                 </a>
 
+                <a href="/markets.html">
+                  Market Square
+                </a>
+
                 <a href="/contact.html">
                   Complaints
                 </a>
+
               </div>
+
             </div>
 
             <div class="col-6 col-md-3 col-lg-2">
+
               <h6 class="footer-title">
                 Company
               </h6>
 
               <div class="footer-links">
+
                 <a href="/about.html">
                   About Oyuki
                 </a>
@@ -2568,10 +2493,13 @@ function renderNav() {
                 <a href="/register.html">
                   Create Account
                 </a>
+
               </div>
+
             </div>
 
             <div class="col-lg-4 col-md-6">
+
               <div class="footer-newsletter-card">
 
                 <div class="footer-newsletter-icon">
@@ -2583,15 +2511,17 @@ function renderNav() {
                 </h6>
 
                 <p>
-                  Get product updates, special offers and
-                  Farmers' Day announcements.
+                  Get product updates, special offers
+                  and Farmers' Day announcements.
                 </p>
 
                 <form
                   id="newsletterForm"
                   class="footer-newsletter-form"
                 >
+
                   <div class="footer-input-group">
+
                     <i class="bi bi-envelope"></i>
 
                     <input
@@ -2602,15 +2532,20 @@ function renderNav() {
                       autocomplete="email"
                       required
                     >
+
                   </div>
 
                   <button
                     class="btn footer-subscribe-btn"
                     type="submit"
                   >
-                    <span>Subscribe</span>
+                    <span>
+                      Subscribe
+                    </span>
+
                     <i class="bi bi-send"></i>
                   </button>
+
                 </form>
 
                 <div
@@ -2620,22 +2555,31 @@ function renderNav() {
                 ></div>
 
                 <small class="footer-privacy">
+
                   <i class="bi bi-shield-check"></i>
+
                   No spam. Unsubscribe anytime.
+
                 </small>
+
               </div>
+
             </div>
+
           </div>
 
           <div class="footer-divider"></div>
 
           <div class="footer-bottom">
+
             <span>
               © ${new Date().getFullYear()}
-              Oyuki Marketplace. All rights reserved.
+              Oyuki Marketplace.
+              All rights reserved.
             </span>
 
             <div class="footer-bottom-links">
+
               <a href="/privacy.html">
                 Privacy
               </a>
@@ -2649,9 +2593,13 @@ function renderNav() {
                 <i class="bi bi-heart-fill"></i>
                 in Nigeria
               </span>
+
             </div>
+
           </div>
+
         </div>
+
       </footer>
     `;
 
@@ -2735,7 +2683,9 @@ function renderNav() {
             message.textContent,
             'success'
           );
+
         } catch (error) {
+
           message.textContent =
             error.message ||
             'Unable to subscribe. Please try again.';
@@ -2748,8 +2698,11 @@ function renderNav() {
             message.textContent,
             'error'
           );
+
         } finally {
+
           button.disabled = false;
+
           button.innerHTML =
             originalButton;
         }
@@ -2766,6 +2719,7 @@ function renderNav() {
 
     Api,
     Auth,
+
     Products,
     Cart,
     Wishlist,
@@ -2774,16 +2728,20 @@ function renderNav() {
     Coupons,
     Orders,
     CustomerPayments,
+
     Recommendations,
     Notifications,
     Password,
     Toast,
     Forms,
+
     ProviderProfiles,
     ProviderProducts,
     ProviderOrders,
     PickupAddress,
+
     PublicReviews,
+
     AdminUsers,
     AdminApplications,
     AdminOrders,
@@ -2795,19 +2753,16 @@ function renderNav() {
     imageUrl,
     normalizeProduct,
     productCard,
-    kitchenCard,
-    kitchensFromProducts,
     addToCart,
     escapeHtml,
     rolePage,
     unwrap,
+
     K,
     load,
     save,
 
-    products: () => [],
-    meals: () => [],
-    kitchens: () => []
+    products: () => []
   };
 
   function initialisePage() {
@@ -2836,4 +2791,5 @@ function renderNav() {
   } else {
     initialisePage();
   }
+
 })();

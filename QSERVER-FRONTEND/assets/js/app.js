@@ -2253,19 +2253,6 @@ function renderNav() {
             Market Square
           </a>
 
-          <a
-            class="nav-link"
-            href="/meals.html"
-          >
-            Ready Meals
-          </a>
-
-          <a
-            class="nav-link"
-            href="/kitchens.html"
-          >
-            Kitchens
-          </a>
 
           <a
             class="nav-link"
@@ -2523,14 +2510,6 @@ function renderNav() {
               <div class="footer-links">
                 <a href="/shop.html">
                   Marketplace
-                </a>
-
-                <a href="/meals.html">
-                  Ready Meals
-                </a>
-
-                <a href="/kitchens.html">
-                  Kitchens
                 </a>
 
                 <a href="/home.html#freshFromFarm">

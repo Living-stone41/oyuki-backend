@@ -161,6 +161,35 @@ public class OtpDeliveryService {
         return user.getPhoneNumber();
     }
 
+    /**
+     * Sends activation OTPs to every contact method available on an
+     * admin-created account. Email uses the supplied local OTP; phone
+     * uses Twilio Verify, which generates its own OTP.
+     */
+    public void sendAdminActivationOtps(User user, String emailOtp) {
+        validateUser(user);
+
+        boolean delivered = false;
+
+        if (user.getEmail() != null && !user.getEmail().isBlank()) {
+            sendEmail(
+                    user.getEmail(),
+                    "Activate your Oyuki account",
+                    registrationEmail(user.getFullName(), emailOtp)
+            );
+            delivered = true;
+        }
+
+        if (user.getPhoneNumber() != null && !user.getPhoneNumber().isBlank()) {
+            twilioVerifyService.sendOtp(user.getPhoneNumber());
+            delivered = true;
+        }
+
+        if (!delivered) {
+            throw new IllegalArgumentException("At least one email or phone number is required");
+        }
+    }
+
     /*
      * Password-reset OTP.
      *
