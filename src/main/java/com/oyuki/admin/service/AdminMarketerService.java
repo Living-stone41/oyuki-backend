@@ -39,6 +39,10 @@ public class AdminMarketerService {
             CreateMarketerRequest request
     ) {
 
+        if (request.email() == null || request.email().isBlank()) {
+            throw new IllegalArgumentException("Email is required for marketer activation");
+        }
+
         String email = request.email()
                 .trim()
                 .toLowerCase(Locale.ROOT);
@@ -54,7 +58,7 @@ public class AdminMarketerService {
             );
         }
 
-        if (userRepository.existsByPhoneNumber(phone)) {
+        if (phone != null && !phone.isBlank() && userRepository.existsByPhoneNumber(phone)) {
             throw new IllegalArgumentException(
                     "This phone number is already registered"
             );
@@ -122,7 +126,7 @@ public class AdminMarketerService {
          * Send OTP through the existing Oyuki OTP
          * delivery system.
          */
-        otpDeliveryService.sendAdminActivationOtps(marketer, otp);
+        otpDeliveryService.sendEmailOtp(marketer, otp);
 
         return AdminMarketerResponse.from(marketer);
     }

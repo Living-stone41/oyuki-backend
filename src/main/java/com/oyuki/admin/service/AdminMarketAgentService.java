@@ -45,14 +45,14 @@ public class AdminMarketAgentService {
         String email = cleanEmail(request.email());
         String phone = cleanPhone(request.phoneNumber());
 
-        if (email == null && phone == null) {
-            throw new IllegalArgumentException("Provide at least an email address or phone number");
+        if (email == null) {
+            throw new IllegalArgumentException("Email is required for Market Agent activation");
         }
 
         if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new IllegalArgumentException("This email address is already registered");
         }
-        if (userRepository.existsByPhoneNumber(phone)) {
+        if (phone != null && !phone.isBlank() && userRepository.existsByPhoneNumber(phone)) {
             throw new IllegalArgumentException("This phone number is already registered");
         }
 
@@ -103,7 +103,7 @@ public class AdminMarketAgentService {
                 .attempts(0)
                 .build());
 
-        otpDeliveryService.sendAdminActivationOtps(agent, otp);
+        otpDeliveryService.sendAdminActivationEmailOtp(agent, otp);
         return AdminMarketAgentResponse.from(profile);
     }
 

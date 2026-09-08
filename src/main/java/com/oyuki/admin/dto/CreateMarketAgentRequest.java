@@ -11,6 +11,7 @@ public record CreateMarketAgentRequest(
         @Size(min = 2, max = 150)
         String fullName,
 
+        @NotBlank(message = "Email is required")
         @Email(message = "Enter a valid email address")
         String email,
 
