@@ -180,6 +180,16 @@ public class OtpDeliveryService {
         );
     }
 
+
+    /**
+     * Compatibility alias for admin email-only activation OTP.
+     * This delegates to the dedicated admin activation email method.
+     */
+    public void sendEmailOtp(User user, String emailOtp) {
+        sendAdminActivationEmailOtp(user, emailOtp);
+    }
+
+
     /*
      * Password-reset OTP.
      *

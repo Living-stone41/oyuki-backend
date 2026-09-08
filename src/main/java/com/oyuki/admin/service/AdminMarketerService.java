@@ -126,7 +126,7 @@ public class AdminMarketerService {
          * Send OTP through the existing Oyuki OTP
          * delivery system.
          */
-        otpDeliveryService.sendEmailOtp(marketer, otp);
+        otpDeliveryService.sendAdminActivationEmailOtp(marketer, otp);
 
         return AdminMarketerResponse.from(marketer);
     }
